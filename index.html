@@ -51,8 +51,8 @@ button{border:0;border-radius:8px;padding:10px 12px;cursor:pointer;font-weight:8
 .sig-place{font-size:11px;margin-top:2px}
 .sig-role{font-size:12px;margin-top:9px}
 .digital-sign{font-size:10px;font-weight:800;margin-top:5px;letter-spacing:.25px}
-.verification{position:absolute;right:48px;bottom:28px;width:175px;text-align:center;background:#fff}
-.qr{width:130px;height:130px;display:block;margin:0 auto 5px;image-rendering:auto}
+.verification{position:absolute;right:38px;bottom:24px;width:190px;text-align:center;background:#fff;padding:2px 0}
+.qr{width:156px;height:156px;display:block;margin:0 auto 5px;image-rendering:pixelated;image-rendering:crisp-edges}
 .verified{font-size:9px;font-weight:900;letter-spacing:.35px}.vcode{font-size:8px;font-weight:900;margin-top:3px;word-break:break-all}.vfirm,.vsign,.vstatus{font-size:6.8px;font-weight:700;margin-top:2px;line-height:1.18}
 .footer-note{position:absolute;right:48px;bottom:10px;font-size:6.5px;color:#555}
 
@@ -152,7 +152,7 @@ body.auth-locked .app,body.auth-locked header{visibility:hidden;pointer-events:n
 <button class="primary" id="generate">GENERATE A4 SURVEY REPORT</button>
 </div><div id="status" class="status"></div></div>
 <div class="card"><h3>Final Validation</h3><div class="checks" id="checks">
-<span id="c1">○ Required fields</span><span id="c2">○ Coordinates</span><span id="c3">○ Verification code</span><span id="c4">○ QR generated with integrated report details</span><span id="c5">○ Flattened A4 PDF</span><span id="c6">○ Final SHA-256</span>
+<span id="c1">○ Required fields</span><span id="c2">○ Coordinates</span><span id="c3">○ Verification code</span><span id="c4">○ Android-friendly QR with major report details</span><span id="c5">○ Flattened A4 PDF</span><span id="c6">○ Final SHA-256</span>
 </div></div>
 
 <div class="card">
@@ -190,7 +190,7 @@ body.auth-locked .app,body.auth-locked header{visibility:hidden;pointer-events:n
 <div class="sig-role" id="pDesignation"></div>
 <div class="digital-sign" id="pDigitalSign"></div>
 </div>
-<div class="verification"><canvas id="qr" class="qr" width="1000" height="1000"></canvas><div class="verified">DIGITALLY VERIFIED</div><div class="vcode" id="pVCode">—</div><div class="vfirm" id="pVFirm"></div><div class="vsign" id="pVSign"></div><div class="vstatus">AUTO GENERATED PDF • QR AUTHENTICATED</div></div>
+<div class="verification"><canvas id="qr" class="qr" width="1600" height="1600"></canvas><div class="verified">DIGITALLY VERIFIED • SCAN FOR REPORT DETAILS</div><div class="vcode" id="pVCode">—</div><div class="vfirm" id="pVFirm"></div><div class="vsign" id="pVSign"></div><div class="vstatus">AUTO GENERATED PDF • QR AUTHENTICATED</div></div>
 <div class="footer-note">Digitally generated survey report</div>
 </div></div></div></main>
 </div>
@@ -477,44 +477,55 @@ function validate(){
  return required&&validCoords;
 }
 function canonicalPayload(code){
- const d=getData();
- return [
-  "SAGT SURVEY REPORT",
-  "UNIQUE CODE: "+code,
-  "FIRM NAME: "+d.org,
-  "DIGITALLY AUTHORISED SIGNATORY: "+d.designation,
-  "DIGITALLY VERIFIED AUTO GENERATED PDF",
-  "REPORT: "+d.reportNo,
-  "SURVEY: "+d.surveyNo,
-  "APPLICANT: "+d.applicant,
-  "EXTENT: "+d.extent,
-  "LOCATION: "+d.village+", "+d.mandal,
-  "DATE: "+fmtDate(d.surveyDate)
- ].join("\n");
+  const d=getData();
+  // Compact plain-text payload: Android QR readers can decode it and show
+  // these major report details in their normal result/preview popup.
+  return [
+   "SAGT SURVEY REPORT",
+   "VERIFICATION CODE: "+code,
+   "FIRM: "+d.org,
+   "SIGNATORY: "+d.designation,
+   "STATUS: DIGITALLY VERIFIED AUTO GENERATED PDF",
+   "REPORT NO: "+d.reportNo,
+   "SURVEY NO: "+d.surveyNo,
+   "APPLICANT: "+d.applicant,
+   "EXTENT: "+d.extent,
+   "VILLAGE: "+d.village,
+   "MANDAL: "+d.mandal,
+   "SURVEY DATE: "+fmtDate(d.surveyDate)
+  ].join("\n");
 }
 function randomCode(){
  const a=new Uint8Array(8);crypto.getRandomValues(a);return "SAGT-VER-"+new Date().getFullYear()+"-"+[...a].map(x=>x.toString(16).padStart(2,"0")).join("").toUpperCase();
 }
 function drawQR(payload){
- const qr=qrcode(0,"H");
- qr.addData(payload);
- qr.make();
- const c=$("qr"),ctx=c.getContext("2d"),n=qr.getModuleCount(),quiet=4,size=c.width;
- const cell=Math.floor(size/(n+quiet*2));
- const actual=(n+quiet*2)*cell;
- const offset=Math.floor((size-actual)/2);
- ctx.setTransform(1,0,0,1,0,0);
- ctx.fillStyle="#fff";ctx.fillRect(0,0,size,size);
- ctx.fillStyle="#000";
- for(let r=0;r<n;r++){
-  for(let col=0;col<n;col++){
-   if(qr.isDark(r,col)){
-    const x=offset+(col+quiet)*cell, y=offset+(r+quiet)*cell;
-    ctx.fillRect(x,y,cell,cell);
-   }
+  const qr=qrcode(0,"H");
+  qr.addData(payload);
+  qr.make();
+
+  const c=$("qr"), ctx=c.getContext("2d",{alpha:false});
+  const n=qr.getModuleCount(), quiet=4, size=c.width;
+  const modules=n+quiet*2;
+  const cell=Math.max(1,Math.floor(size/modules));
+  const actual=modules*cell;
+  const offset=Math.floor((size-actual)/2);
+
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.imageSmoothingEnabled=false;
+  ctx.fillStyle="#fff";
+  ctx.fillRect(0,0,size,size);
+  ctx.fillStyle="#000";
+
+  for(let r=0;r<n;r++){
+    for(let col=0;col<n;col++){
+      if(qr.isDark(r,col)){
+        const x=offset+(col+quiet)*cell;
+        const y=offset+(r+quiet)*cell;
+        ctx.fillRect(x,y,cell,cell);
+      }
+    }
   }
- }
- return c;
+  return c;
 }
 async function sha256(buf){const h=await crypto.subtle.digest("SHA-256",buf);return [...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,"0")).join("")}
 async function fileHash(file){return sha256(await file.arrayBuffer())}
