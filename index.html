@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SAGT Survey Report Generator v7</title>
+<style>
+:root{--ink:#111;--muted:#666;--line:#d8d8d8;--panel:#fff;--bg:#eef1f4;--accent:#123a63}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Arial,sans-serif;background:var(--bg);color:#111}
+header{height:64px;background:#12283d;color:#fff;display:flex;align-items:center;padding:0 22px;justify-content:space-between}
+header .brand{font-weight:800;letter-spacing:.4px} header .sub{font-size:12px;opacity:.75}
+.app{display:grid;grid-template-columns:390px 1fr;min-height:calc(100vh - 64px)}
+.panel{background:#f7f8fa;border-right:1px solid #d9dde2;padding:16px;overflow:auto}
+.preview-wrap{padding:22px;overflow:auto}
+.card{background:var(--panel);border:1px solid #dde1e5;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 2px 8px #00000008}
+.card h3{font-size:13px;margin:0 0 11px;text-transform:uppercase;letter-spacing:.7px;color:#25384a}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.field{display:flex;flex-direction:column;gap:4px}.field.full{grid-column:1/-1}
+label{font-size:11px;color:#59636d;font-weight:700}
+input,textarea,button{font:inherit}
+input,textarea{border:1px solid #cbd2d9;border-radius:7px;padding:8px 9px;background:#fff;font-size:12px}
+textarea{min-height:94px;resize:vertical}
+button{border:0;border-radius:8px;padding:10px 12px;cursor:pointer;font-weight:800;font-size:12px}
+.primary{background:#123a63;color:#fff}.secondary{background:#e7edf3;color:#16324b}.danger{background:#fee9e9;color:#9c2222}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.actions .primary{grid-column:1/-1;padding:13px}
+.status{font-size:11px;padding:9px;border-radius:8px;background:#eef6ef;color:#256c32;display:none}
+.status.show{display:block}.err{background:#fff0f0;color:#a22020}
+.checks{font-size:11px;line-height:1.8}.checks span{display:block}.ok{color:#197337}.bad{color:#a22020}
+.coord-head,.coord-row{display:grid;grid-template-columns:32px 1fr 1fr 28px;gap:5px;align-items:center}
+.coord-head{font-size:9px;font-weight:800;color:#68737e;margin-bottom:4px}.coord-row{margin-bottom:5px}.coord-row input{min-width:0;padding:7px}.coord-row button{padding:5px}
+.a4-shell{display:flex;justify-content:center}
+#a4{width:794px;height:1123px;background:#fff;box-shadow:0 5px 28px #0002;position:relative;overflow:hidden}
+.report{position:absolute;inset:0;padding:54px 48px 34px 48px;font-family:Arial,Helvetica,sans-serif;color:#111;background:#fff;overflow:hidden}
+.refno{position:absolute;right:48px;top:17px;font-size:13px}
+.title{text-align:center;font-size:23px;font-weight:800;margin-top:2px;margin-bottom:54px}
+.details{display:grid;grid-template-columns:276px 15px 1fr;row-gap:18px;font-size:14px;line-height:1.15}
+.details .label{font-weight:400}.colon{text-align:center}.value{font-weight:400}
+.section-title{font-size:14px;font-weight:800;margin-top:7px;margin-bottom:8px}
+.observations{font-size:14px;line-height:1.5;text-align:center;padding:0 42px}
+.obs p{margin:0 0 17px}
+.coords-title{font-size:14px;font-weight:800;margin-top:2px;margin-bottom:5px}
+.coord-table{width:350px;border-collapse:collapse;font-size:12px;margin-bottom:0}
+.coord-table th,.coord-table td{border:1px solid #111;height:23px;text-align:center;padding:2px}
+.coord-table th{font-weight:800}
+.declaration{font-weight:800;text-align:center;font-size:13px;line-height:1.45;margin:22px 10px 0;max-width:690px}
+.from{font-size:14px;margin-top:18px}
+.signature-area{position:absolute;left:48px;bottom:30px;width:280px}
+.seal{display:none}
+.sig-name{font-size:12px;font-weight:800;letter-spacing:.2px;margin-top:2px}
+.sig-place{font-size:11px;margin-top:2px}
+.sig-role{font-size:12px;margin-top:9px}
+.digital-sign{font-size:10px;font-weight:800;margin-top:5px;letter-spacing:.25px}
+.verification{position:absolute;right:48px;bottom:28px;width:175px;text-align:center;background:#fff}
+.qr{width:130px;height:130px;display:block;margin:0 auto 5px;image-rendering:auto}
+.verified{font-size:9px;font-weight:900;letter-spacing:.35px}.vcode{font-size:8px;font-weight:900;margin-top:3px;word-break:break-all}.vfirm,.vsign,.vstatus{font-size:6.8px;font-weight:700;margin-top:2px;line-height:1.18}
+.footer-note{position:absolute;right:48px;bottom:10px;font-size:6.5px;color:#555}
+
+.history-item{border:1px solid #dfe3e7;border-radius:8px;padding:8px;margin-top:6px;background:#fbfcfd;font-size:10px}
+.history-item .hc{font-weight:900;color:#123a63;word-break:break-all}
+.history-item .hm{color:#59636d;margin-top:2px;line-height:1.45}
+.history-item button{font-size:9px;padding:5px 7px;margin-top:5px}
+@media(max-width:1050px){.app{grid-template-columns:1fr}.panel{border-right:0;border-bottom:1px solid #ddd}.preview-wrap{min-height:100vh}.a4-shell{transform-origin:top center}}
+</style>
+</head>
+<body>
+<header><div class="brand">SAGT • SURVEY REPORT GENERATOR</div><div class="sub">A4 • flattened PDF • integrated QR • Admin History</div></header>
+<div class="app">
+<aside class="panel">
+<div class="card"><h3>Report Details</h3><div class="grid">
+<div class="field"><label>Report No.</label><input id="reportNo"></div>
+<div class="field"><label>Survey No.</label><input id="surveyNo"></div>
+<div class="field"><label>Report Date</label><input id="reportDate" type="date"></div>
+<div class="field"><label>Survey Date</label><input id="surveyDate" type="date"></div>
+<div class="field full"><label>Survey Type</label><input id="surveyType"></div>
+</div></div>
+<div class="card"><h3>Applicant / Site</h3><div class="grid">
+<div class="field full"><label>Applicant Name *</label><input id="applicant"></div>
+<div class="field"><label>Nature of Site</label><input id="nature"></div>
+<div class="field"><label>Electricity No.</label><input id="electricity"></div>
+<div class="field"><label>Applied Extent *</label><input id="extent"></div>
+<div class="field"><label>Village *</label><input id="village"></div>
+<div class="field full"><label>Mandal *</label><input id="mandal"></div>
+</div></div>
+<div class="card"><h3>Organization / Signatory</h3><div class="grid">
+<div class="field full"><label>Organization</label><input id="org"></div>
+<div class="field"><label>City</label><input id="city"></div>
+<div class="field"><label>Designation</label><input id="designation"></div>
+<div class="field full"><label>Digital Signatory Text</label><input id="digitalSign"></div>
+</div></div>
+<div class="card"><h3>Observations</h3><div class="field"><label>Editable report body</label><textarea id="observations"></textarea></div></div>
+<div class="card"><h3>Coordinates</h3>
+<div class="coord-head"><span>#</span><span>Latitude</span><span>Longitude</span><span></span></div>
+<div id="coords"></div><button class="secondary" id="addCoord">+ Add Point</button>
+</div>
+<div class="card"><h3>Declaration</h3><textarea id="declaration"></textarea></div>
+<div class="card"><h3>Source PDF (optional)</h3><input id="sourcePdf" type="file" accept="application/pdf"><div style="font-size:10px;color:#667;margin-top:5px">If supplied, its SHA-256 is recorded separately as the original source hash.</div></div>
+<div class="card"><div class="actions">
+<button class="secondary" id="reset">Reset Defaults</button>
+<button class="secondary" id="validate">Validate</button>
+<button class="primary" id="generate">GENERATE A4 SURVEY REPORT</button>
+</div><div id="status" class="status"></div></div>
+<div class="card"><h3>Final Validation</h3><div class="checks" id="checks">
+<span id="c1">○ Required fields</span><span id="c2">○ Coordinates</span><span id="c3">○ Verification code</span><span id="c4">○ QR generated with integrated report details</span><span id="c5">○ Flattened A4 PDF</span><span id="c6">○ Final SHA-256</span>
+</div></div>
+
+<div class="card">
+<h3>ADMIN • REPORT HISTORY</h3>
+<div class="field"><label>Search code / report / applicant</label><input id="historySearch" placeholder="SAGT-VER-..."></div>
+<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+<button class="secondary" id="refreshHistory">Refresh</button>
+<button class="secondary" id="exportHistory">Export CSV</button>
+<button class="danger" id="clearHistory">Clear History</button>
+</div>
+<div id="historySummary" style="font-size:10px;color:#667;margin-top:8px"></div>
+<div id="historyList" style="margin-top:8px;max-height:280px;overflow:auto"></div>
+</div>
+</aside>
+<main class="preview-wrap"><div class="a4-shell"><div id="a4"><div class="report">
+<div class="refno" id="pReportNo"></div>
+<div class="title">SURVEY REPORT</div>
+<div class="details">
+<div class="label">Name of the Applicant</div><div class="colon">:</div><div class="value" id="pApplicant"></div>
+<div class="label">Nature of Site</div><div class="colon">:</div><div class="value" id="pNature"></div>
+<div class="label">Electricity No</div><div class="colon">:</div><div class="value" id="pElectricity"></div>
+<div class="label">Applied Survey No</div><div class="colon">:</div><div class="value" id="pSurveyNo"></div>
+<div class="label">Applied Extent</div><div class="colon">:</div><div class="value" id="pExtent"></div>
+<div class="label">Village Name</div><div class="colon">:</div><div class="value" id="pVillage"></div>
+<div class="label">Mandal Name</div><div class="colon">:</div><div class="value" id="pMandal"></div>
+</div>
+<div class="section-title">OBSERVATIONS:-</div>
+<div class="observations obs" id="pObs"></div>
+<div class="coords-title">GEO CO-ORDINATES</div>
+<table class="coord-table"><thead><tr><th>POINTS</th><th>LATITUDE</th><th>LONGITUDE</th></tr></thead><tbody id="pCoords"></tbody></table>
+<div class="declaration" id="pDeclaration"></div>
+<div class="from" id="pFrom"></div>
+<div class="signature-area">
+<div class="sig-name" id="pOrg"></div><div class="sig-place" id="pCity"></div>
+<div class="sig-role" id="pDesignation"></div>
+<div class="digital-sign" id="pDigitalSign"></div>
+</div>
+<div class="verification"><canvas id="qr" class="qr" width="1000" height="1000"></canvas><div class="verified">DIGITALLY VERIFIED</div><div class="vcode" id="pVCode">—</div><div class="vfirm" id="pVFirm"></div><div class="vsign" id="pVSign"></div><div class="vstatus">AUTO GENERATED PDF • QR AUTHENTICATED</div></div>
+<div class="footer-note">Digitally generated survey report</div>
+</div></div></div></main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script>
+const DEFAULTS = {
+ reportNo:"Geo-001/SAGT/VSP(R)", surveyNo:"52/16 Part", surveyType:"LAND SURVEY REPORT",
+ applicant:"GADDIPALLI.SATYAVATHI", nature:"BUILT UP", electricity:"116582R009002722",
+ extent:"56.66 Sq.Yds", village:"RUSHIKONDA", mandal:"VISAKHAPATNAM(RURAL)",
+ org:"SRI ADITHYA GEO TECH", city:"VISAKHAPATNAM", designation:"(LICENSED SURVEYOR)",
+ digitalSign:"DIGITALLY AUTHORISED SIGNATORY",
+ observations:[
+ "The Survey was done in the presence of applicant in Sy. No 52/16 Part. and applied extent is 56.66 Sq.Yds",
+ "On ground extent as per survey is 56.66 Sq.Yds in Sy.No 52/ Part in RUSHIKONDA Village, VISAKHAPATNAM(RURAL) Mandal.",
+ "Total Extent is 56.66 Sq.Yds."
+ ],
+ declaration:"This Survey report does not confer any title (or) ownership on the said land.\\nIt is also for the purpose of demarcation as per the request of the applicant.",
+ coords:[
+  {lat:"17.784941",lon:"83.381459"},{lat:"17.784911",lon:"83.381540"},{lat:"17.784868",lon:"83.381522"},{lat:"",lon:""}
+ ]
+};
+const $=id=>document.getElementById(id);
+const fields=["reportNo","surveyNo","reportDate","surveyDate","surveyType","applicant","nature","electricity","extent","village","mandal","org","city","designation","digitalSign","observations","declaration"];
+function fmtDate(v){if(!v)return "";const d=new Date(v+"T00:00:00");return String(d.getDate()).padStart(2,"0")+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+d.getFullYear()}
+function setStatus(msg,err=false){$("status").textContent=msg;$("status").className="status show"+(err?" err":"")}
+function setCheck(id,ok,text){$(id).textContent=(ok?"✓ ":"○ ")+text;$(id).className=ok?"ok":"bad"}
+function loadDefaults(){
+ for(const id of fields){ if(id==="observations") $(id).value=DEFAULTS.observations.join("\\n\\n"); else if(id==="declaration") $(id).value=DEFAULTS.declaration; else if(DEFAULTS[id]!==undefined) $(id).value=DEFAULTS[id]; }
+ const now=new Date(); $("reportDate").value=now.toISOString().slice(0,10); $("surveyDate").value=now.toISOString().slice(0,10);
+ renderCoords(); updatePreview();
+}
+function renderCoords(){
+ $("coords").innerHTML="";
+ DEFAULTS.coords.forEach((c,i)=>addCoordRow(c.lat,c.lon,i+1));
+}
+function addCoordRow(lat="",lon="",num=null){
+ const rows=[...$("coords").children]; const n=num||rows.length+1;
+ const div=document.createElement("div"); div.className="coord-row";
+ div.innerHTML=`<span>${n}</span><input class="lat" value="${lat}" inputmode="decimal"><input class="lon" value="${lon}" inputmode="decimal"><button class="danger" title="Delete">×</button>`;
+ div.querySelector("button").onclick=()=>{div.remove(); renumber(); updatePreview()};
+ div.querySelectorAll("input").forEach(x=>x.addEventListener("input",updatePreview)); $("coords").appendChild(div);
+}
+function renumber(){[...$("coords").children].forEach((r,i)=>r.children[0].textContent=i+1)}
+function getCoords(){return [...$("coords").children].map(r=>({lat:r.querySelector(".lat").value.trim(),lon:r.querySelector(".lon").value.trim()}))}
+function getData(){return Object.fromEntries(fields.map(id=>[id,$(id).value.trim()]))}
+function escapeHTML(s){return s.replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]))}
+
+function fitReportLayout(){
+ const report=document.querySelector(".report");
+ const obs=$("pObs");
+ const declaration=$("pDeclaration");
+ const coordsTitle=document.querySelector(".coords-title");
+ const coordTable=document.querySelector(".coord-table");
+ const bottomReserve=205; // fixed reserved zone for signatory + QR
+ const maxMainBottom=report.clientHeight-bottomReserve;
+
+ // Start from normal sizes.
+ report.style.fontSize="";
+ obs.style.fontSize="14px";
+ obs.style.lineHeight="1.5";
+ obs.querySelectorAll("p").forEach(p=>p.style.marginBottom="17px");
+ declaration.style.fontSize="13px";
+ declaration.style.lineHeight="1.45";
+
+ // Progressively compact ONLY the report body if user enters longer text.
+ for(let i=0;i<12;i++){
+   const reportTop=obs.getBoundingClientRect().top-report.getBoundingClientRect().top;
+   const tableBottom=coordTable.getBoundingClientRect().bottom-report.getBoundingClientRect().top;
+   const declarationBottom=declaration.getBoundingClientRect().bottom-report.getBoundingClientRect().top;
+   const required=Math.max(tableBottom,declarationBottom);
+   if(required<=maxMainBottom) break;
+
+   const fs=Math.max(11.5,parseFloat(getComputedStyle(obs).fontSize)-0.35);
+   const lh=Math.max(1.28,parseFloat(getComputedStyle(obs).lineHeight)/parseFloat(getComputedStyle(obs).fontSize)-0.03);
+   obs.style.fontSize=fs+"px";
+   obs.style.lineHeight=lh;
+   obs.querySelectorAll("p").forEach(p=>{
+     p.style.marginBottom=Math.max(8,parseFloat(p.style.marginBottom||17)-1.2)+"px";
+   });
+   declaration.style.fontSize=Math.max(11,parseFloat(getComputedStyle(declaration).fontSize)-0.25)+"px";
+   declaration.style.lineHeight=Math.max(1.25,parseFloat(getComputedStyle(declaration).lineHeight)/parseFloat(getComputedStyle(declaration).fontSize)-0.02);
+ }
+
+ // If content is still too tall, compact the details rows slightly.
+ let tableBottom=coordTable.getBoundingClientRect().bottom-report.getBoundingClientRect().top;
+ if(tableBottom>maxMainBottom){
+   document.querySelector(".details").style.rowGap="14px";
+   document.querySelector(".title").style.marginBottom="46px";
+   document.querySelector(".section-title").style.marginTop="3px";
+ }
+
+ // Never allow the QR/signatory zone to intrude into the main content.
+ const qr=document.querySelector(".verification");
+ const sig=document.querySelector(".signature-area");
+ const q=qr.getBoundingClientRect(), sg=sig.getBoundingClientRect(), rr=report.getBoundingClientRect();
+ const mainBottom=Math.max(q.bottom,sg.bottom);
+ if(mainBottom>rr.bottom-7){
+   qr.style.bottom="18px"; sig.style.bottom="18px";
+ }
+}
+
+function updatePreview(){
+ const d=getData(); $("pReportNo").textContent=d.reportNo; $("pApplicant").textContent=d.applicant; $("pNature").textContent=d.nature; $("pElectricity").textContent=d.electricity; $("pSurveyNo").textContent=d.surveyNo; $("pExtent").textContent=d.extent; $("pVillage").textContent=d.village; $("pMandal").textContent=d.mandal;
+ $("pObs").innerHTML=d.observations.split(/\\n\\s*\\n/).map(x=>`<p>${escapeHTML(x).replace(/\\n/g,"<br>")}</p>`).join("");
+ $("pDeclaration").innerHTML=escapeHTML(d.declaration).replace(/\\n/g,"<br>");
+ $("pFrom").textContent="From "+d.org+".";
+ $("pOrg").textContent=d.org; $("pCity").textContent=d.city; $("pDesignation").textContent=d.designation; $("pDigitalSign").textContent=d.digitalSign; $("pVFirm").textContent=d.org; $("pVSign").textContent="DIGITALLY AUTHORISED SIGNATORY: "+d.designation;
+ $("pCoords").innerHTML=getCoords().map((c,i)=>`<tr><td>${i+1}</td><td>${escapeHTML(c.lat)}</td><td>${escapeHTML(c.lon)}</td></tr>`).join("");
+ requestAnimationFrame(fitReportLayout);
+}
+fields.forEach(id=>$(id).addEventListener("input",updatePreview));
+$("addCoord").onclick=()=>{addCoordRow();updatePreview()};
+$("reset").onclick=()=>{loadDefaults();setStatus("Defaults restored.")};
+
+function validate(){
+ const d=getData(), cs=getCoords();
+ const required=!!(d.applicant&&d.surveyNo&&d.extent&&d.village&&d.mandal&&d.reportNo&&d.org);
+ const validCoords=cs.length>0 && cs.some(c=>c.lat&&c.lon) && cs.filter(c=>c.lat||c.lon).every(c=>{const a=Number(c.lat),b=Number(c.lon);return Number.isFinite(a)&&Number.isFinite(b)&&a>=-90&&a<=90&&b>=-180&&b<=180});
+ setCheck("c1",required,"Required fields");
+ setCheck("c2",validCoords,"Coordinates");
+ return required&&validCoords;
+}
+function canonicalPayload(code){
+ const d=getData();
+ return [
+  "SAGT SURVEY REPORT",
+  "UNIQUE CODE: "+code,
+  "FIRM NAME: "+d.org,
+  "DIGITALLY AUTHORISED SIGNATORY: "+d.designation,
+  "DIGITALLY VERIFIED AUTO GENERATED PDF",
+  "REPORT: "+d.reportNo,
+  "SURVEY: "+d.surveyNo,
+  "APPLICANT: "+d.applicant,
+  "EXTENT: "+d.extent,
+  "LOCATION: "+d.village+", "+d.mandal,
+  "DATE: "+fmtDate(d.surveyDate)
+ ].join("\n");
+}
+function randomCode(){
+ const a=new Uint8Array(8);crypto.getRandomValues(a);return "SAGT-VER-"+new Date().getFullYear()+"-"+[...a].map(x=>x.toString(16).padStart(2,"0")).join("").toUpperCase();
+}
+function drawQR(payload){
+ const qr=qrcode(0,"H");
+ qr.addData(payload);
+ qr.make();
+ const c=$("qr"),ctx=c.getContext("2d"),n=qr.getModuleCount(),quiet=4,size=c.width;
+ const cell=Math.floor(size/(n+quiet*2));
+ const actual=(n+quiet*2)*cell;
+ const offset=Math.floor((size-actual)/2);
+ ctx.setTransform(1,0,0,1,0,0);
+ ctx.fillStyle="#fff";ctx.fillRect(0,0,size,size);
+ ctx.fillStyle="#000";
+ for(let r=0;r<n;r++){
+  for(let col=0;col<n;col++){
+   if(qr.isDark(r,col)){
+    const x=offset+(col+quiet)*cell, y=offset+(r+quiet)*cell;
+    ctx.fillRect(x,y,cell,cell);
+   }
+  }
+ }
+ return c;
+}
+async function sha256(buf){const h=await crypto.subtle.digest("SHA-256",buf);return [...new Uint8Array(h)].map(b=>b.toString(16).padStart(2,"0")).join("")}
+async function fileHash(file){return sha256(await file.arrayBuffer())}
+async function renderA4ToCanvas(){
+ const src=$("a4");
+ // html2canvas is required because an HTML element cannot be passed to CanvasRenderingContext2D.drawImage().
+ // Scale 4 gives a high-resolution flattened page while keeping QR modules crisp.
+ return await html2canvas(src,{
+   scale:4,
+   backgroundColor:"#ffffff",
+   useCORS:true,
+   allowTaint:false,
+   logging:false,
+   imageTimeout:0
+ });
+}
+
+const DB_NAME="SAGT_Report_History_DB";
+const DB_VERSION=1;
+const STORE="reports";
+
+function openDB(){
+ return new Promise((resolve,reject)=>{
+  if(!window.indexedDB){reject(new Error("IndexedDB unavailable"));return}
+  const req=indexedDB.open(DB_NAME,DB_VERSION);
+  req.onupgradeneeded=()=>{
+   const db=req.result;
+   if(!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE,{keyPath:"verificationCode"});
+  };
+  req.onsuccess=()=>resolve(req.result);
+  req.onerror=()=>reject(req.error);
+ });
+}
+async function getAllReports(){
+ try{
+  const db=await openDB();
+  return await new Promise((resolve,reject)=>{
+   const req=db.transaction(STORE,"readonly").objectStore(STORE).getAll();
+   req.onsuccess=()=>resolve(req.result||[]);
+   req.onerror=()=>reject(req.error);
+  });
+ }catch(e){
+  try{return JSON.parse(localStorage.getItem("sagt_report_history_v5")||"[]")}catch(_){return[]}
+ }
+}
+async function saveReport(record){
+ const existing=await getAllReports();
+ if(existing.some(x=>x.verificationCode===record.verificationCode))
+   throw new Error("Duplicate verification code");
+
+ try{
+  const db=await openDB();
+  await new Promise((resolve,reject)=>{
+   const tx=db.transaction(STORE,"readwrite");
+   tx.objectStore(STORE).add(record);
+   tx.oncomplete=resolve;
+   tx.onerror=()=>reject(tx.error);
+  });
+ }catch(e){
+  // Fallback metadata-only history if IndexedDB is unavailable.
+  const meta={...record}; delete meta.pdfBlob;
+  const metas=existing.map(x=>{const y={...x};delete y.pdfBlob;return y});
+  localStorage.setItem("sagt_report_history_v5",JSON.stringify([meta,...metas]));
+ }
+}
+function escapeAttr(s){return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+async function downloadSavedReport(code){
+ const rows=await getAllReports();
+ const r=rows.find(x=>x.verificationCode===code);
+ if(!r||!r.pdfBlob){setStatus("Saved PDF bytes are not available in this browser history.",true);return}
+ const url=URL.createObjectURL(r.pdfBlob);
+ const a=document.createElement("a");a.href=url;a.download=r.fileName;a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+async function renderHistory(){
+ const q=($("historySearch")?.value||"").trim().toLowerCase();
+ const all=(await getAllReports()).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));
+ const rows=all.filter(x=>[x.verificationCode,x.reportNo,x.surveyNo,x.applicant,x.organization].join(" ").toLowerCase().includes(q));
+ $("historySummary").textContent=`${rows.length} shown • ${all.length} total report(s) • duplicate verification codes blocked`;
+ $("historyList").innerHTML=rows.length?rows.map(x=>`
+  <div class="history-item">
+   <div class="hc">${escapeAttr(x.verificationCode)}</div>
+   <div class="hm"><b>${escapeAttr(x.applicant)}</b> • ${escapeAttr(x.reportNo)}<br>
+   ${escapeAttr(x.organization)} • ${escapeAttr(x.signatory)}<br>
+   ${escapeAttr(x.surveyNo)} • ${escapeAttr(x.village)}, ${escapeAttr(x.mandal)} • ${escapeAttr(String(x.createdAt).replace("T"," ").replace("Z"," UTC"))}<br>
+   SHA-256: ${escapeAttr(x.finalPdfSHA256)}
+   </div>
+   ${x.pdfBlob?`<button class="secondary" onclick="downloadSavedReport('${escapeAttr(x.verificationCode)}')">Download Saved PDF</button>`:""}
+  </div>`).join(""):`<div style="font-size:10px;color:#777;padding:8px 0">No saved reports.</div>`;
+}
+async function exportHistoryCSV(){
+ const h=await getAllReports();
+ if(!h.length){setStatus("No report history to export.",true);return}
+ const cols=["verificationCode","createdAt","reportNo","surveyNo","applicant","organization","signatory","status","surveyDate","village","mandal","extent","finalPdfSHA256","originalSourceSHA256","fileName"];
+ const esc=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+ const csv=[cols.join(","),...h.map(r=>cols.map(c=>esc(r[c])).join(","))].join("\\r\\n");
+ const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+ const url=URL.createObjectURL(blob),a=document.createElement("a");
+ a.href=url;a.download=`SAGT-report-history-${new Date().toISOString().slice(0,10)}.csv`;a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+$("historySearch").addEventListener("input",renderHistory);
+$("refreshHistory").onclick=renderHistory;
+$("exportHistory").onclick=exportHistoryCSV;
+$("clearHistory").onclick=async()=>{
+ if(!confirm("Clear all locally saved SAGT report history? This cannot be undone."))return;
+ try{
+  const db=await openDB();
+  await new Promise((resolve,reject)=>{
+   const tx=db.transaction(STORE,"readwrite");tx.objectStore(STORE).clear();
+   tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
+  });
+ }catch(e){}
+ localStorage.removeItem("sagt_report_history_v5");
+ await renderHistory();setStatus("Admin report history cleared.");
+};
+
+async function generate(){
+ if(!validate()){setStatus("Please correct the required fields and coordinate values.",true);return}
+
+ const history=await getAllReports();
+ let code="";
+ do{code=randomCode()}while(history.some(x=>x.verificationCode===code));
+
+ setStatus("Generating high-resolution QR and A4 PDF…");
+ $("pVCode").textContent=code;
+
+ const payload=canonicalPayload(code);
+ drawQR(payload);
+ setCheck("c3",true,"Unique verification code");
+ setCheck("c4",true,"QR generated with integrated report details");
+
+ await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))); fitReportLayout(); await new Promise(r=>requestAnimationFrame(r));
+
+ let canvas;
+ try{
+  canvas=await renderA4ToCanvas();
+ }catch(e){
+  console.error(e);
+  setStatus("PDF rendering failed. Make sure the application has internet access so the PDF renderer can load.",true);
+  return;
+ }
+
+ const img=canvas.toDataURL("image/png");
+ const {jsPDF}=window.jspdf;
+ const pdf=new jsPDF({orientation:"portrait",unit:"mm",format:"a4",compress:true});
+ pdf.addImage(img,"PNG",0,0,210,297,undefined,"FAST");
+
+ const bytes=pdf.output("arraybuffer");
+ const finalHash=await sha256(bytes);
+ setCheck("c5",true,"Flattened A4 PDF");
+ setCheck("c6",true,"Final SHA-256");
+
+ const d=getData(), originalFile=$("sourcePdf").files[0];
+ let originalHash="";
+ if(originalFile) originalHash=await fileHash(originalFile);
+
+ const finalName=`SAGT-${code}-verified.pdf`;
+ const record={
+  verificationCode:code,
+  createdAt:new Date().toISOString(),
+  reportNo:d.reportNo,surveyNo:d.surveyNo,applicant:d.applicant,
+  organization:d.org,signatory:d.designation,
+  status:"DIGITALLY VERIFIED AUTO GENERATED PDF",
+  surveyDate:fmtDate(d.surveyDate),village:d.village,mandal:d.mandal,extent:d.extent,
+  finalPdfSHA256:finalHash,originalSourceSHA256:originalHash||"",
+  fileName:finalName,qrPayload:payload,
+  pdfBlob:new Blob([bytes],{type:"application/pdf"})
+ };
+
+ try{
+  await saveReport(record);
+ }catch(e){
+  console.error(e);
+  setStatus("Report could not be saved to Admin History. Please try again.",true);
+  return;
+ }
+
+ await renderHistory();
+
+ // Download the exact same bytes that were hashed and saved.
+ const url=URL.createObjectURL(record.pdfBlob);
+ const a=document.createElement("a");a.href=url;a.download=finalName;a.click();
+ setTimeout(()=>{window.open(url,"_blank","noopener");URL.revokeObjectURL(url)},200);
+
+ setStatus(`Generated successfully • ${code} • Saved to Admin History • Final SHA-256: ${finalHash}`);
+ console.log(record);
+}
+
+$("validate").onclick=()=>{const ok=validate();setStatus(ok?"Validation passed. Ready to generate.":"Validation failed. Check required fields.",!ok)};
+$("generate").onclick=generate;
+loadDefaults();
+renderHistory();
+</script>
+</body></html>
