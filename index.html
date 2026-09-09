@@ -113,7 +113,7 @@ button{border:0;border-radius:8px;padding:10px 12px;cursor:pointer;font-weight:8
 .history-item .hm{color:#59636d;margin-top:2px;line-height:1.45}
 .history-item button{font-size:9px;padding:5px 7px;margin-top:5px}
 
-.password-row{display:grid;grid-template-columns:1fr auto;gap:6px;align-items:stretch}.password-toggle{min-width:64px}.auth-links{text-align:center;margin-top:10px}.link-button{border:0;background:none;color:#174d7a;text-decoration:underline;cursor:pointer;font-size:11px}.auth-warning{margin-top:8px;padding:8px;border-radius:7px;background:#fff8df;color:#775d00;font-size:11px}.auth-warning.expired{background:#fff0f0;color:#9b2020;font-weight:800}#changePasswordModal[hidden],#authGate[hidden]{display:none!important}.auth-card h2{font-size:16px;margin:0 0 8px}.auth-gate{position:fixed;inset:0;background:#12283d;display:flex;align-items:center;justify-content:center;z-index:99999;padding:20px}
+.auth-gate{position:fixed;inset:0;background:#12283d;display:flex;align-items:center;justify-content:center;z-index:99999;padding:20px}
 .auth-card{width:min(430px,100%);background:#fff;border-radius:16px;padding:26px;box-shadow:0 18px 60px #0007}
 .auth-badge{width:42px;height:42px;border-radius:10px;background:#123a63;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;margin-bottom:12px}
 .auth-card h1{margin:0 0 6px;font-size:22px}.auth-card p{font-size:12px;color:#59636d;line-height:1.5;margin:0 0 18px}
@@ -216,98 +216,46 @@ body.sagt-resizing,.sagt-resizing *{cursor:col-resize!important;user-select:none
   .a4-shell{width:210mm!important;height:297mm!important;margin:0!important}
   #a4{width:210mm!important;height:297mm!important;transform:none!important;box-shadow:none!important}
 }
-.registration-note{font-size:11px;color:#59636d;line-height:1.45;margin:8px 0}.auth-step{border:1px solid #dce3e9;border-radius:9px;padding:10px;margin:10px 0;background:#f8fafc}.auth-step[hidden]{display:none}.auth-inline{display:flex;gap:7px}.auth-inline>*:first-child{flex:1}.field-valid{border-color:#197337!important;box-shadow:0 0 0 2px #19733718}.field-invalid{border-color:#a22020!important}.password-toggle{min-width:62px}.auth-links{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}.link-button{background:none;color:#123a63;padding:4px 6px;text-decoration:underline;font-size:11px}.auth-small{font-size:10px;color:#68737e;margin-top:5px}.auth-success{background:#eef6ef;color:#256c32}.</style>
+</style>
 </head>
 <body>
 
 <div id="authGate" class="auth-gate" aria-modal="true" role="dialog">
   <div class="auth-card">
     <div class="auth-badge">SAGT</div>
-    <h1 id="authTitle">Employee Sign In</h1>
-    <p id="authIntro">Use your single SAGT employee account. The same authenticated session is used across every authorized application module.</p>
+    <h1>Admin Login</h1>
+    <p id="authIntro">Administrative authentication is required before the report generator can be used. This standalone browser build protects access on this device; server-side enforcement is required for organization-wide security.</p>
+
     <form id="authForm" autocomplete="on">
-      <div id="loginFields">
-        <label class="auth-label" for="loginUser">Username</label>
-        <input id="loginUser" autocomplete="username" maxlength="32" required>
-        <label class="auth-label" for="loginPass">Password</label>
-        <div class="password-row"><input id="loginPass" type="password" autocomplete="current-password" minlength="8" maxlength="8" pattern="[A-Za-z0-9]{8}" required><button id="toggleLoginPass" type="button" class="secondary password-toggle">SHOW</button></div>
-        <div id="expiryWarning" class="auth-warning" hidden></div>
+      <div id="setupFields">
+        <label class="auth-label" for="adminUser">Admin Username</label>
+        <input id="adminUser" autocomplete="username" maxlength="32" value="">
+        <label class="auth-label" for="adminPass">Create Admin Passphrase</label>
+        <input id="adminPass" type="password" autocomplete="new-password" minlength="10" maxlength="64">
+        <label class="auth-label" for="adminPass2">Confirm Admin Passphrase</label>
+        <input id="adminPass2" type="password" autocomplete="new-password" minlength="10" maxlength="64">
+        <div class="auth-help">Use a passphrase (10–64 characters). Spaces and normal printable characters are allowed; longer passphrases are encouraged.</div>
       </div>
-      <div id="authMessage" class="auth-message" role="alert" aria-live="polite"></div>
-      <button id="authSubmit" class="primary auth-submit" type="submit">LOGIN</button>
-      <div class="auth-links"><button id="forgotPassword" type="button" class="link-button">Forgot Password?</button><button id="startRegistration" type="button" class="link-button">First-Time Account Setup</button></div>
-    </form>
-    <form id="registrationForm" hidden autocomplete="off">
-      <h2>First-Time Account Setup</h2>
-      <p class="registration-note">Use the registered mobile number to verify your identity. Username and password creation becomes available only after successful OTP verification.</p>
-      <div id="registrationMobileStep" class="auth-step">
-        <label class="auth-label" for="registrationMobile">Registered Mobile Number</label>
-        <input id="registrationMobile" inputmode="tel" autocomplete="tel" maxlength="16" placeholder="+91 XXXXX XXXXX" required>
-        <button id="sendRegistrationOtp" class="primary auth-submit" type="button">SEND OTP</button>
+
+      <div id="loginFields" hidden>
+        <label class="auth-label" for="loginUser">Admin Username</label>
+        <input id="loginUser" autocomplete="username" maxlength="32">
+        <label class="auth-label" for="loginPass">Admin Passphrase</label>
+        <input id="loginPass" type="password" autocomplete="current-password" minlength="10" maxlength="64">
       </div>
-      <div id="registrationOtpStep" class="auth-step" hidden>
-        <label class="auth-label" for="registrationOtp">OTP</label>
-        <input id="registrationOtp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="\d{6}">
-        <button id="verifyRegistrationOtp" class="primary auth-submit" type="button">VERIFY OTP</button>
-        <div id="registrationOtpCooldown" class="auth-small"></div>
-      </div>
-      <div id="registrationCredentialsStep" class="auth-step" hidden>
-        <label class="auth-label" for="registrationUsername">Create Username</label>
-        <input id="registrationUsername" autocomplete="username" maxlength="32" required>
-        <div id="registrationUsernameStatus" class="auth-small"></div>
-        <label class="auth-label" for="registrationPassword">Create Password</label>
-        <div class="password-row"><input id="registrationPassword" type="password" autocomplete="new-password" minlength="8" maxlength="8" pattern="[A-Za-z0-9]{8}" required><button id="toggleRegistrationPass" type="button" class="secondary password-toggle">SHOW</button></div>
-        <label class="auth-label" for="registrationPassword2">Confirm Password</label>
-        <input id="registrationPassword2" type="password" autocomplete="new-password" minlength="8" maxlength="8" pattern="[A-Za-z0-9]{8}" required>
-        <div class="auth-small">Password must be exactly 8 alphanumeric characters and must not match your username.</div>
-        <button id="completeRegistration" class="primary auth-submit" type="button">CREATE ACCOUNT</button>
-      </div>
-      <div id="registrationMessage" class="auth-message" role="alert" aria-live="polite"></div>
-      <div class="auth-links"><button id="registrationBackToLogin" type="button" class="link-button">Back to Login</button></div>
-    </form>
-    <form id="resetForm" hidden autocomplete="off">
-      <h2>Reset Password</h2>
-      <label class="auth-label" for="resetIdentity">Username or registered mobile</label>
-      <input id="resetIdentity" autocomplete="username" maxlength="64" required>
-      <button id="requestOtp" class="primary auth-submit" type="submit">SEND OTP</button>
-      <div class="auth-help">OTP delivery is performed only by the configured secure server-side provider. If no provider is configured, the reset request is rejected rather than simulated.</div>
-      <div id="otpFields" hidden>
-        <label class="auth-label" for="resetOtp">OTP</label>
-        <input id="resetOtp" inputmode="numeric" autocomplete="one-time-code" maxlength="10">
-        <label class="auth-label" for="resetNewPass">New Password</label>
-        <div class="password-row"><input id="resetNewPass" type="password" autocomplete="new-password" minlength="8" maxlength="8" pattern="[A-Za-z0-9]{8}"><button id="toggleResetPass" type="button" class="secondary password-toggle">SHOW</button></div>
-        <label class="auth-label" for="resetNewPass2">Confirm New Password</label>
-        <input id="resetNewPass2" type="password" autocomplete="new-password" minlength="8" maxlength="8" pattern="[A-Za-z0-9]{8}">
-        <button id="completeReset" type="button" class="primary auth-submit">UPDATE PASSWORD</button>
-      </div>
-      <div class="auth-links"><button id="backToLogin" type="button" class="link-button">Back to Login</button></div>
+
+      <div id="authMessage" class="auth-message" role="alert"></div>
+      <button id="authSubmit" class="primary auth-submit" type="submit">Create Admin & Continue</button>
     </form>
   </div>
-</div>
-<div id="changePasswordModal" class="auth-gate" hidden aria-modal="true" role="dialog">
-  <div class="auth-card">
-    <div class="auth-badge">🔐</div><h1>Change Password</h1>
-    <p>Password must be exactly 8 alphanumeric characters and must not match your username.</p>
-    <form id="changePasswordForm" autocomplete="off">
-      <label class="auth-label" for="currentPassword">Current Password</label>
-      <input id="currentPassword" type="password" autocomplete="current-password" maxlength="8" minlength="8" required>
-      <label class="auth-label" for="newPassword">New Password</label>
-      <input id="newPassword" type="password" autocomplete="new-password" maxlength="8" minlength="8" pattern="[A-Za-z0-9]{8}" required>
-      <label class="auth-label" for="confirmPassword">Confirm New Password</label>
-      <input id="confirmPassword" type="password" autocomplete="new-password" maxlength="8" minlength="8" pattern="[A-Za-z0-9]{8}" required>
-      <div id="changePasswordMessage" class="auth-message" role="alert"></div>
-      <button class="primary auth-submit" type="submit">SAVE NEW PASSWORD</button>
-      <button id="closeChangePassword" class="secondary auth-submit" type="button">CANCEL</button>
-    </form>
-  </div>
-</div>
-<div id="sessionBar" class="session-bar" hidden>
-  <span>🔒 <b id="sessionIdentity">AUTHENTICATED</b> • <span id="sessionTimer">15:00</span></span>
-  <button id="openChangePassword" class="secondary">CHANGE PASSWORD</button>
-  <button id="lockNow" class="secondary">LOG OUT</button>
 </div>
 
-<header><div class="brand">SAGT • SURVEY REPORT GENERATOR</div><div class="sub">A4 • flattened PDF • integrated QR • CENTRALIZED EMPLOYEE AUTHENTICATION</div></header>
+<div id="sessionBar" class="session-bar" hidden>
+  <span>🔒 <b>ADMIN SESSION ACTIVE</b> • <span id="sessionTimer">15:00</span></span>
+  <button id="lockNow" class="secondary">LOCK NOW</button>
+</div>
+
+<header><div class="brand">SAGT • SURVEY REPORT GENERATOR</div><div class="sub">A4 • flattened PDF • integrated QR • Admin History • ADMIN ONLY</div></header>
 <div class="app" data-class-id="surveyReport">
 <aside class="panel">
 <div class="card"><h3>Report Details</h3><div class="grid form-grid">
@@ -519,163 +467,170 @@ body.sagt-resizing,.sagt-resizing *{cursor:col-resize!important;user-select:none
 </script>
 <script>
 
-/* ---------- CENTRALIZED SAGT AUTHENTICATION CLIENT ----------
-   This UI is intentionally backend-dependent. It never stores passwords,
-   password hashes, OTPs, bearer tokens, or employee credentials in browser
-   storage. Authentication, password hashing, account state, OTP delivery,
-   authorization and session enforcement belong to the server.
-
-   REQUIRED SERVER API:
-   GET  /api/auth/csrf
-   POST /api/auth/registration/start
-   POST /api/auth/registration/verify-otp
-   GET  /api/auth/registration/username-available
-   POST /api/auth/registration/complete
-   POST /api/auth/login
-   POST /api/auth/logout
-   GET  /api/auth/me
-   POST /api/auth/change-password
-   POST /api/auth/request-password-reset
-   POST /api/auth/complete-password-reset
+/* ---------- ADMIN SECURITY LAYER ----------
+   Standalone/browser build:
+   - Password is never stored in plaintext.
+   - PBKDF2-HMAC-SHA-256 with a unique random salt is used locally.
+   - 15–64 character passphrases are accepted.
+   - Failed attempts are throttled with escalating lockout.
+   - Authenticated state exists only in sessionStorage.
+   - 15-minute inactivity timeout with explicit Lock Now.
+   IMPORTANT: A static HTML file cannot provide server-enforced security.
+   For production deployment, move authentication/session enforcement to a server
+   using HttpOnly/Secure/SameSite cookies and preferably MFA.
 */
+const AUTH_DB_KEY="sagt_admin_auth_v8";
+const AUTH_SESSION_KEY="sagt_admin_session_v8";
 const AUTH_IDLE_MS=15*60*1000;
-const AUTH_API_BASE=(window.SAGT_AUTH_API_BASE||'').replace(/\/$/,'');
-let authState=null, authTimer=null, csrfToken=null;
+const AUTH_MAX_PASSWORD=64;
+let authLastActivity=Date.now();
+let authTimer=null;
 
 function authMsg(msg,ok=false){
- const el=document.getElementById('authMessage'); if(!el)return;
- el.textContent=msg;el.className='auth-message show'+(ok?' ok':'');
+ const el=document.getElementById("authMessage");
+ el.textContent=msg;el.className="auth-message show"+(ok?" ok":"");
 }
-function changeMsg(msg,ok=false){
- const el=document.getElementById('changePasswordMessage'); if(!el)return;
- el.textContent=msg;el.className='auth-message show'+(ok?' ok':'');
+function b64(buf){return btoa(String.fromCharCode(...new Uint8Array(buf)))}
+function fromB64(str){
+ const bin=atob(str),a=new Uint8Array(bin.length);
+ for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);
+ return a;
 }
-function localPasswordPolicy(p,username=''){
- if(typeof p!=='string'||!/^[A-Za-z0-9]{8}$/.test(p)) return 'Password must be exactly 8 alphanumeric characters and must not match your username.';
- if(username && p.toLowerCase()===username.toLowerCase()) return 'Password must be exactly 8 alphanumeric characters and must not match your username.';
- return '';
+async function derivePassword(password,salt,iterations=600000){
+ const enc=new TextEncoder();
+ const key=await crypto.subtle.importKey("raw",enc.encode(password),{name:"PBKDF2"},false,["deriveBits"]);
+ return crypto.subtle.deriveBits({name:"PBKDF2",salt,iterations,hash:"SHA-256"},key,256);
 }
-async function api(path,options={}){
- const headers=new Headers(options.headers||{});
- headers.set('Accept','application/json');
- if(options.body && !headers.has('Content-Type')) headers.set('Content-Type','application/json');
- if(csrfToken && /^(POST|PUT|PATCH|DELETE)$/i.test(options.method||'GET')) headers.set('X-CSRF-Token',csrfToken);
- let res;
- try{res=await fetch(AUTH_API_BASE+path,{...options,headers,credentials:'include'});}catch(e){throw new Error('Authentication service is unavailable. Please contact your administrator.');}
- let data={}; try{data=await res.json()}catch(_){ }
- if(res.status===401){authState=null;throw new Error(data.message||'Authentication required.');}
- if(!res.ok)throw new Error(data.message||'Request could not be completed.');
- return data;
+function constantTimeEqual(a,b){
+ if(a.length!==b.length)return false;
+ let v=0;for(let i=0;i<a.length;i++)v|=a[i]^b[i];return v===0;
 }
-async function loadCsrf(){const d=await api('/api/auth/csrf');csrfToken=d.csrfToken;return csrfToken}
-function setSessionUI(){
- const u=authState?.user;
- document.getElementById('sessionIdentity').textContent=u?`${u.username} • ${u.role||'USER'}`:'AUTHENTICATED';
- document.getElementById('sessionBar').hidden=!u;
- document.body.classList.toggle('auth-locked',!u);
+function passwordPolicy(p){
+ if(typeof p!=="string" || p.length<10 || p.length>AUTH_MAX_PASSWORD) return "Use a passphrase between 10 and 64 characters.";
+ const weak=["passwordpassword","password123456","adminadminadmin","qwertyuiopasdfg","letmeinletmein12","123456789012345","changemechangeme","sagtadmin1234567"];
+ if(weak.includes(p.toLowerCase())) return "Choose a less common passphrase.";
+ return "";
 }
-function showLogin(message=''){
- document.getElementById('authGate').hidden=false;document.getElementById('authGate').style.display='flex';
- document.getElementById('resetForm').hidden=true;document.getElementById('registrationForm').hidden=true;document.getElementById('loginFields').hidden=false;document.getElementById('authSubmit').hidden=false;
- document.getElementById('authTitle').textContent='Employee Sign In';
- document.getElementById('authIntro').textContent='Use your single SAGT employee account. One authenticated session grants access only to modules permitted by your role, department and permissions.';
- document.getElementById('authSubmit').textContent='LOGIN';document.getElementById('authSubmit').hidden=false;document.getElementById('authSubmit').disabled=false;document.getElementById('loginFields').querySelectorAll('input').forEach(x=>x.disabled=false);
- document.getElementById('loginPass').value='';setSessionUI();
- if(message)authMsg(message);
+function getAuthRecord(){
+ try{return JSON.parse(localStorage.getItem(AUTH_DB_KEY)||"null")}catch(e){return null}
 }
-function hideLogin(){document.getElementById('authGate').hidden=true;setSessionUI();startSessionTimer()}
-function showReset(){document.getElementById('loginFields').hidden=true;document.getElementById('registrationForm').hidden=true;document.getElementById('resetForm').hidden=false;document.getElementById('authSubmit').hidden=true;document.getElementById('authTitle').textContent='Password Recovery';document.getElementById('authIntro').textContent='Verify your registered mobile number through the configured secure OTP provider. OTP values are never stored or logged.';document.getElementById('authMessage').className='auth-message';}
+function saveAuthRecord(r){localStorage.setItem(AUTH_DB_KEY,JSON.stringify(r))}
+function getSession(){
+ try{return JSON.parse(sessionStorage.getItem(AUTH_SESSION_KEY)||"null")}catch(e){return null}
+}
+function setSession(){
+ sessionStorage.setItem(AUTH_SESSION_KEY,JSON.stringify({issued:Date.now(),last:Date.now(),nonce:b64(crypto.getRandomValues(new Uint8Array(16)))}));
+ authLastActivity=Date.now();
+}
+function clearSession(){
+ sessionStorage.removeItem(AUTH_SESSION_KEY);
+ if(authTimer)clearInterval(authTimer);
+ authTimer=null;
+ document.body.classList.add("auth-locked");
+ document.getElementById("sessionBar").hidden=true;
+ showLogin();
+}
+function touchSession(){
+ const st=getSession();if(!st)return;
+ authLastActivity=Date.now();st.last=authLastActivity;sessionStorage.setItem(AUTH_SESSION_KEY,JSON.stringify(st));
+}
+function showLogin(){
+ const record=getAuthRecord();
+ document.getElementById("authGate").style.display="flex";
+ document.getElementById("setupFields").hidden=!!record;
+ document.getElementById("loginFields").hidden=!record;
+ document.getElementById("authSubmit").textContent=record?"Login as Admin":"Create Admin & Continue";
+ document.getElementById("authIntro").textContent=record
+   ?"Admin authentication is required. The application is locked until login succeeds."
+   :"First-run setup: create the single Admin account for this browser.";
+ document.getElementById("loginUser").value=record?.username||"";
+ document.getElementById("adminPass").value="";
+ document.getElementById("adminPass2").value="";
+ document.getElementById("loginPass").value="";
+}
+function hideLogin(){
+ document.getElementById("authGate").style.display="none";
+ document.getElementById("sessionBar").hidden=false;
+ document.body.classList.remove("auth-locked");
+ startSessionTimer();
+}
 function startSessionTimer(){
  if(authTimer)clearInterval(authTimer);
  authTimer=setInterval(()=>{
-   if(!authState?.sessionExpiresAt){document.getElementById('sessionTimer').textContent='—';return}
-   const remaining=Math.max(0,new Date(authState.sessionExpiresAt).getTime()-Date.now());
+   const st=getSession();
+   if(!st){clearSession();return}
+   const remaining=AUTH_IDLE_MS-(Date.now()-st.last);
+   if(remaining<=0){clearSession();setTimeout(()=>authMsg("Session expired after 15 minutes of inactivity."),50);return}
    const m=Math.floor(remaining/60000),sec=Math.floor(remaining/1000)%60;
-   document.getElementById('sessionTimer').textContent=`${m}:${String(sec).padStart(2,'0')}`;
-   if(remaining<=0){logout('Session expired. Please sign in again.');}
+   document.getElementById("sessionTimer").textContent=`${m}:${String(sec).padStart(2,"0")}`;
  },1000);
 }
-function isAuthenticated(){return !!authState?.user}
-function requireAuth(){if(!isAuthenticated()){showLogin('Please sign in to continue.');return false}return true}
-function can(permission){return !!authState?.permissions?.includes(permission) || !!authState?.permissions?.includes('*')}
-function requirePermission(permission){if(!requireAuth())return false;if(!can(permission)){setStatus('You are not authorized for this action.',true);return false}return true}
-window.SAGT_AUTH={get state(){return authState},isAuthenticated,can,requireAuth,requirePermission,logout};
-async function refreshAuth(){
- try{await loadCsrf();const d=await api('/api/auth/me');authState=d;return true}catch(e){authState=null;return false}
+function isAdminAuthenticated(){
+ const st=getSession();
+ return !!st && Date.now()-st.last<AUTH_IDLE_MS;
 }
-function expiryMessage(){
- const at=authState?.user?.passwordExpiryAt;if(!at)return '';
- const days=Math.ceil((new Date(at).getTime()-Date.now())/86400000);
- if(days<0)return 'Your password has expired. Please update your password to continue.';
- if(days<=7)return `Your password expires in ${days} day${days===1?'':'s'}.`;
- return '';
+function requireAdmin(){
+ if(!isAdminAuthenticated()){clearSession();return false}
+ touchSession();return true;
 }
-function applyExpiryWarning(){const el=document.getElementById('expiryWarning');const msg=expiryMessage();el.hidden=!msg;el.textContent=msg;el.className='auth-warning'+(msg.startsWith('Your password has expired')?' expired':'')}
-let registrationTimer=null,registrationVerified=false,registrationUsernameAvailable=false;
-function registrationMsg(msg,ok=false){const el=document.getElementById('registrationMessage');if(!el)return;el.textContent=msg;el.className='auth-message show'+(ok?' ok':'')}
-function clearRegistration(){registrationVerified=false;registrationUsernameAvailable=false;if(registrationTimer)clearInterval(registrationTimer);registrationTimer=null;document.getElementById('registrationForm').reset();document.getElementById('registrationOtpStep').hidden=true;document.getElementById('registrationCredentialsStep').hidden=true;document.getElementById('registrationOtpCooldown').textContent='';document.getElementById('registrationUsernameStatus').textContent='';registrationMsg('')}
-function showRegistration(){document.getElementById('authGate').hidden=false;document.getElementById('authGate').style.display='flex';document.getElementById('loginFields').hidden=true;document.getElementById('resetForm').hidden=true;document.getElementById('registrationForm').hidden=false;document.getElementById('authTitle').textContent='First-Time Account Setup';document.getElementById('authIntro').textContent='Verify the pre-registered mobile number first. No username or password can be created before OTP verification.';document.getElementById('authSubmit').hidden=true;clearRegistration();setSessionUI()}
-async function sendRegistrationOtp(){
- const mobile=document.getElementById('registrationMobile').value.trim(); if(!mobile){registrationMsg('Enter your registered mobile number.');return}
- try{const d=await api('/api/auth/registration/start',{method:'POST',body:JSON.stringify({mobileE164:mobile})});registrationMsg(d.message||'OTP sent.',true);document.getElementById('registrationOtpStep').hidden=false;startRegistrationCooldown(Number(d.resendAfterSeconds||60));document.getElementById('registrationOtp').focus()}catch(e){registrationMsg(e.message||'Registration could not be started.')}
-}
-function startRegistrationCooldown(seconds){if(registrationTimer)clearInterval(registrationTimer);let left=Math.max(0,seconds);const btn=document.getElementById('sendRegistrationOtp');btn.disabled=true;const tick=()=>{document.getElementById('registrationOtpCooldown').textContent=left>0?`You can request another OTP in ${left}s.`:'You may request another OTP if needed.';if(left<=0){btn.disabled=false;clearInterval(registrationTimer);registrationTimer=null}left--};tick();registrationTimer=setInterval(tick,1000)}
-async function verifyRegistrationOtp(){const otp=document.getElementById('registrationOtp').value.trim();if(!/^\d{6}$/.test(otp)){registrationMsg('Enter the 6-digit OTP received on the registered mobile number.');return}try{const d=await api('/api/auth/registration/verify-otp',{method:'POST',body:JSON.stringify({otp})});registrationVerified=true;registrationMsg(d.message||'Mobile verified.',true);document.getElementById('registrationCredentialsStep').hidden=false;document.getElementById('registrationMobile').disabled=true;document.getElementById('registrationOtp').disabled=true;document.getElementById('verifyRegistrationOtp').disabled=true;document.getElementById('registrationUsername').focus()}catch(e){registrationMsg(e.message||'OTP verification failed.')}
-}
-async function checkRegistrationUsername(){const input=document.getElementById('registrationUsername'),u=input.value.trim();registrationUsernameAvailable=false;input.classList.remove('field-valid','field-invalid');if(!/^[A-Za-z0-9][A-Za-z0-9._-]{2,31}$/.test(u)){document.getElementById('registrationUsernameStatus').textContent='Username must be 3–32 characters: letters, numbers, dot, underscore or hyphen.';return false}try{const d=await api('/api/auth/registration/username-available?username='+encodeURIComponent(u));registrationUsernameAvailable=!!d.available;input.classList.add(d.available?'field-valid':'field-invalid');document.getElementById('registrationUsernameStatus').textContent=d.available?'Username is available.':'Username is already in use. Please choose another username.';return registrationUsernameAvailable}catch(e){document.getElementById('registrationUsernameStatus').textContent='Unable to check username availability.';return false}}
-async function completeRegistration(){if(!registrationVerified){registrationMsg('Verify the registered mobile number before creating credentials.');return}const u=document.getElementById('registrationUsername').value.trim(),p=document.getElementById('registrationPassword').value,p2=document.getElementById('registrationPassword2').value;if(!await checkRegistrationUsername())return;if(!localPasswordPolicy(p,u)){ } else {registrationMsg(localPasswordPolicy(p,u));return}if(p!==p2){registrationMsg('Password and confirmation do not match.');return}try{const d=await api('/api/auth/registration/complete',{method:'POST',body:JSON.stringify({username:u,password:p})});document.getElementById('registrationPassword').value='';document.getElementById('registrationPassword2').value='';authState=d;hideLogin();setStatus('Account created successfully. Your single employee login is ready.');}catch(e){registrationMsg(e.message||'Account creation failed.')}}
 
-async function login(user,pass){
- const username=user.trim();
- if(!/^[A-Za-z0-9][A-Za-z0-9._-]{2,31}$/.test(username)||!/^[A-Za-z0-9]{8}$/.test(pass)){authMsg('Invalid username or password.');return false}
- try{
-   const d=await api('/api/auth/login',{method:'POST',body:JSON.stringify({username,password:pass})});
-   authState=d;setSessionUI();applyExpiryWarning();
-   if(d.mustChangePassword){showLogin('Your password has expired. Please update your password to continue.');document.getElementById('authSubmit').disabled=true;document.getElementById('loginFields').querySelectorAll('input').forEach(x=>x.disabled=true);openChangePassword();return false;}
-   hideLogin();setStatus(`Welcome ${d.user.displayName||d.user.username}.`);return true;
- }catch(e){authMsg(e.message||'Invalid username or password.');return false}
-}
-async function logout(message=''){try{await api('/api/auth/logout',{method:'POST'})}catch(_){}authState=null;csrfToken=null;if(authTimer)clearInterval(authTimer);authTimer=null;document.getElementById('sessionBar').hidden=true;showLogin(message||'You have been logged out.');}
-async function openChangePassword(){
- if(!isAuthenticated()){showLogin('Sign in or use verified password recovery to continue.');return}
- document.getElementById('changePasswordModal').hidden=false;document.getElementById('changePasswordModal').style.display='flex';changeMsg('');
-}
-function closeChangePassword(){document.getElementById('changePasswordModal').hidden=true;document.getElementById('changePasswordModal').style.display='none';document.getElementById('changePasswordForm').reset()}
-function togglePassword(id,buttonId){const el=document.getElementById(id),b=document.getElementById(buttonId);el.type=el.type==='password'?'text':'password';b.textContent=el.type==='password'?'SHOW':'HIDE'}
+document.addEventListener("pointerdown",()=>{if(isAdminAuthenticated())touchSession()},{passive:true});
+document.addEventListener("keydown",()=>{if(isAdminAuthenticated())touchSession()});
+window.addEventListener("beforeunload",()=>sessionStorage.removeItem(AUTH_SESSION_KEY));
 
-document.getElementById('authForm').addEventListener('submit',async e=>{e.preventDefault();await login(document.getElementById('loginUser').value,document.getElementById('loginPass').value)});
-document.getElementById('startRegistration').onclick=()=>showRegistration();
-document.getElementById('registrationBackToLogin').onclick=()=>showLogin();
-document.getElementById('sendRegistrationOtp').onclick=sendRegistrationOtp;
-document.getElementById('verifyRegistrationOtp').onclick=verifyRegistrationOtp;
-document.getElementById('completeRegistration').onclick=completeRegistration;
-document.getElementById('toggleRegistrationPass').onclick=()=>togglePassword('registrationPassword','toggleRegistrationPass');
-document.getElementById('registrationUsername').addEventListener('input',()=>{clearTimeout(window._regUserTimer);window._regUserTimer=setTimeout(checkRegistrationUsername,350)});
-document.getElementById('forgotPassword').onclick=()=>showReset();
-document.getElementById('backToLogin').onclick=()=>showLogin();
-document.getElementById('toggleLoginPass').onclick=()=>togglePassword('loginPass','toggleLoginPass');
-document.getElementById('toggleResetPass').onclick=()=>togglePassword('resetNewPass','toggleResetPass');
-document.getElementById('openChangePassword').onclick=()=>openChangePassword();
-document.getElementById('closeChangePassword').onclick=()=>closeChangePassword();
-document.getElementById('lockNow').onclick=()=>logout('You have been logged out.');
-document.getElementById('changePasswordForm').addEventListener('submit',async e=>{
- e.preventDefault();if(!requireAuth())return;
- const cur=document.getElementById('currentPassword').value,nw=document.getElementById('newPassword').value,cf=document.getElementById('confirmPassword').value;
- const err=localPasswordPolicy(nw,authState.user.username);if(err){changeMsg(err);return}if(nw!==cf){changeMsg('New password and confirmation do not match.');return}
- try{const d=await api('/api/auth/change-password',{method:'POST',body:JSON.stringify({currentPassword:cur,newPassword:nw})});authState=d;changeMsg('Password changed successfully. Previous sessions have been invalidated.',true);setTimeout(closeChangePassword,900);applyExpiryWarning()}catch(e){changeMsg(e.message||'Password change failed.')}
+document.getElementById("authForm").addEventListener("submit",async e=>{
+ e.preventDefault();
+ const record=getAuthRecord();
+
+ if(!record){
+   const user=document.getElementById("adminUser").value.trim();
+   const p=document.getElementById("adminPass").value;
+   const p2=document.getElementById("adminPass2").value;
+   const usernamePolicy=/^[A-Za-z0-9][A-Za-z0-9._-]{2,31}$/;
+   const reservedUsers=["admin","administrator","root","system","support","security","superuser"];
+   if(!usernamePolicy.test(user)){authMsg("Username must be 3–32 characters and use only letters, numbers, dot, underscore, or hyphen.");return}
+   if(reservedUsers.includes(user.toLowerCase())){authMsg("Choose a non-default administrator username.");return}
+   const policy=passwordPolicy(p);if(policy){authMsg(policy);return}
+   if(p.toLowerCase().includes(user.toLowerCase())){authMsg("Password should not contain the username.");return}
+   if(p!==p2){authMsg("The two passphrases do not match.");return}
+   const salt=crypto.getRandomValues(new Uint8Array(16));
+   const hash=await derivePassword(p,salt);
+   saveAuthRecord({username:user,salt:b64(salt),hash:b64(hash),iterations:600000,failed:0,lockedUntil:0,createdAt:new Date().toISOString()});
+   setSession();hideLogin();authMsg("",true);
+   setStatus("Admin session established.");
+   return;
+ }
+
+ const user=document.getElementById("loginUser").value.trim();
+ const p=document.getElementById("loginPass").value;
+ const usernamePolicy=/^[A-Za-z0-9][A-Za-z0-9._-]{2,31}$/;
+ if(!usernamePolicy.test(user)){authMsg("Invalid admin credentials.");return}
+ if(Date.now()<Number(record.lockedUntil||0)){
+   const wait=Math.ceil((Number(record.lockedUntil)-Date.now())/1000);
+   authMsg(`Too many failed attempts. Try again in ${wait} seconds.`);return;
+ }
+ if(user!==record.username){
+   record.failed=(record.failed||0)+1;
+   record.lockedUntil=Date.now()+Math.min(300000,15000*Math.pow(2,Math.min(record.failed-1,4)));
+   saveAuthRecord(record);authMsg("Invalid admin credentials.");return;
+ }
+ const hash=await derivePassword(p,fromB64(record.salt),record.iterations||600000);
+ if(!constantTimeEqual(new Uint8Array(hash),fromB64(record.hash))){
+   record.failed=(record.failed||0)+1;
+   record.lockedUntil=Date.now()+Math.min(300000,15000*Math.pow(2,Math.min(record.failed-1,4)));
+   saveAuthRecord(record);authMsg("Invalid admin credentials.");return;
+ }
+ record.failed=0;record.lockedUntil=0;saveAuthRecord(record);
+ setSession();hideLogin();setStatus("Admin login successful.");
 });
-document.getElementById('requestOtp').addEventListener('click',async e=>{
- e.preventDefault();const identity=document.getElementById('resetIdentity').value.trim();if(!identity){authMsg('Enter your username or registered mobile number.');return}
- try{const d=await api('/api/auth/request-password-reset',{method:'POST',body:JSON.stringify({identity})});authMsg(d.message||'If the account is eligible, an OTP has been sent.',true);document.getElementById('otpFields').hidden=false;document.getElementById('requestOtp').disabled=true}catch(e){authMsg(e.message||'Password reset could not be started.')}
-});
-document.getElementById('completeReset').onclick=async()=>{
- const identity=document.getElementById('resetIdentity').value.trim(),otp=document.getElementById('resetOtp').value.trim(),nw=document.getElementById('resetNewPass').value,cf=document.getElementById('resetNewPass2').value;
- const err=localPasswordPolicy(nw,'');if(err){authMsg(err);return}if(nw!==cf){authMsg('New password and confirmation do not match.');return}
- try{const d=await api('/api/auth/complete-password-reset',{method:'POST',body:JSON.stringify({identity,otp,newPassword:nw})});authState=d;hideLogin();setStatus('Password reset successful. You are signed in.');}catch(e){authMsg(e.message||'Password reset failed.')}
-};
-document.addEventListener('pointerdown',()=>{if(isAuthenticated())api('/api/auth/touch',{method:'POST'}).catch(()=>{})},{passive:true});
-window.addEventListener('pagehide',()=>{});
-async function bootSecurity(){document.body.classList.add('auth-locked');if(await refreshAuth()){hideLogin();applyExpiryWarning()}else showLogin()}
+
+document.getElementById("lockNow").onclick=()=>{clearSession();authMsg("Application locked. Login required.");};
+
+async function bootSecurity(){
+ document.body.classList.add("auth-locked");
+ if(isAdminAuthenticated()){touchSession();hideLogin()}
+ else showLogin();
+}
 
 /* ---------- CLASS / SECTION ISOLATION LAYER ----------
    v15 contained a single visual form, but its data bindings were global:
@@ -1136,8 +1091,8 @@ function setupLayoutControls(){
   setupPaneResizer();
   $("fitA4")?.addEventListener("click",()=>{layoutSettings.a4Zoom="fit";applyA4Zoom("fit");setStatus("A4 fitted proportionally to the report viewport.");});
   document.querySelectorAll(".zoom-btn").forEach(b=>b.addEventListener("click",()=>applyA4Zoom(b.dataset.zoom)));
-  $("autoArrangeLayout")?.addEventListener("click",()=>{if(!requirePermission("survey.report.generate"))return;layoutSettings.autoArrange=true;autoArrangeFormFields();layoutSettings.a4Zoom="fit";applyA4Zoom("fit");autoBalanceLayout(false);saveLayoutSettings();updatePreview();setStatus("Layout automatically arranged without changing entered data.");});
-  $("resetLayout")?.addEventListener("click",()=>{if(!requirePermission("survey.report.settings"))return;Object.assign(layoutSettings,{...layoutSettings,panelWidth:"auto",reportWidth:"auto",a4Zoom:"fit",autoArrange:true,columnGap:16,fieldGap:12});autoBalanceLayout(false);autoArrangeFormFields();saveLayoutSettings();applyA4Zoom("fit");updatePreview();setStatus("Layout reset to recommended automatic settings.");});
+  $("autoArrangeLayout")?.addEventListener("click",()=>{if(!requireAdmin())return;layoutSettings.autoArrange=true;autoArrangeFormFields();layoutSettings.a4Zoom="fit";applyA4Zoom("fit");autoBalanceLayout(false);saveLayoutSettings();updatePreview();setStatus("Layout automatically arranged without changing entered data.");});
+  $("resetLayout")?.addEventListener("click",()=>{if(!requireAdmin())return;Object.assign(layoutSettings,{...layoutSettings,panelWidth:"auto",reportWidth:"auto",a4Zoom:"fit",autoArrange:true,columnGap:16,fieldGap:12});autoBalanceLayout(false);autoArrangeFormFields();saveLayoutSettings();applyA4Zoom("fit");updatePreview();setStatus("Layout reset to recommended automatic settings.");});
   window.addEventListener("resize",()=>{if(!window.matchMedia("(max-width:720px)").matches && layoutSettings.panelWidth==="auto")autoBalanceLayout(false);fitA4ToViewport();},{passive:true});
 }
 
@@ -1193,7 +1148,7 @@ function setupAlignmentSettings(){
     $(id)?.addEventListener("change",applyAlignmentSettings);
   });
   $("resetAlignment")?.addEventListener("click",()=>{
-    if(!requireAuth())return;
+    if(!requireAdmin())return;
     resetAlignmentSettings();
     requestAnimationFrame(fitReportLayout);
   });
@@ -1388,12 +1343,12 @@ function updatePreview(classId=CLASS_SCOPE_ID){
 
 setupClassInputDelegation(CLASS_SCOPE_ID);
 setupAlignmentSettings();
-$("autoAlign")?.addEventListener("click",()=>{if(requirePermission("survey.report.settings"))autoAlignForm()});
+$("autoAlign")?.addEventListener("click",()=>{if(requireAdmin())autoAlignForm()});
 window.addEventListener("resize",fitA4ToViewport,{passive:true});
 setupEditableOutput();
 setupTableEditors();
-$("addCoord").onclick=()=>{if(!requirePermission("survey.report.edit"))return;addCoordRow("","",null,CLASS_SCOPE_ID);syncClassDataFromDOM(CLASS_SCOPE_ID);updatePreview()};
-$("reset").onclick=()=>{if(!requirePermission("survey.report.edit"))return;loadDefaults();setStatus("Defaults restored.")};
+$("addCoord").onclick=()=>{if(!requireAdmin())return;addCoordRow("","",null,CLASS_SCOPE_ID);syncClassDataFromDOM(CLASS_SCOPE_ID);updatePreview()};
+$("reset").onclick=()=>{if(!requireAdmin())return;loadDefaults();setStatus("Defaults restored.")};
 
 function isValidISODate(value){
   const v=String(value??"").trim();
@@ -1695,10 +1650,10 @@ async function exportHistoryCSV(){
  a.href=url;a.download=`SAGT-report-history-${new Date().toISOString().slice(0,10)}.csv`;a.click();
  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
-$("historySearch").addEventListener("input",()=>{if(requirePermission("survey.report.history"))renderHistory()});
-$("refreshHistory").onclick=()=>{if(requirePermission("survey.report.history"))renderHistory()};
-$("exportHistory").onclick=()=>{if(requirePermission("survey.report.history.export"))exportHistoryCSV()};
-$("clearHistory").onclick=async()=>{if(!requireAuth())return;
+$("historySearch").addEventListener("input",()=>{if(requireAdmin())renderHistory()});
+$("refreshHistory").onclick=()=>{if(requireAdmin())renderHistory()};
+$("exportHistory").onclick=()=>{if(requireAdmin())exportHistoryCSV()};
+$("clearHistory").onclick=async()=>{if(!requireAdmin())return;
  if(!confirm("Clear all locally saved SAGT report history? This cannot be undone."))return;
  try{
   const db=await openDB();
@@ -1713,7 +1668,7 @@ $("clearHistory").onclick=async()=>{if(!requireAuth())return;
 
 let generationBusy=false,lastFinalPdfBytes=null;
 async function generate(){
- if(generationBusy)return;if(!requirePermission("survey.report.generate"))return;if(!(await validate()))return;
+ if(generationBusy)return;if(!requireAdmin())return;if(!(await validate()))return;
  generationBusy=true;const btn=$("generate");if(btn)btn.disabled=true;
  try{
   let libs={jsPDF:false,html2canvas:false,qrcode:false};
@@ -1757,10 +1712,10 @@ async function generate(){
  }finally{generationBusy=false;if(btn)btn.disabled=false}
 }
 
-$("validate").onclick=async()=>{if(!requirePermission("survey.report.generate"))return;await validate()};
-$("generate").onclick=()=>{if(!requirePermission("survey.report.generate"))return;generate()};
-$("saveDraft").onclick=()=>{if(requirePermission("survey.report.edit"))saveDraft(true)};
-$("clearDraft").onclick=()=>{if(!requirePermission("survey.report.edit"))return;if(confirm("Clear the locally saved draft? This does not delete report history."))clearDraft()};
+$("validate").onclick=async()=>{if(!requireAdmin())return;await validate()};
+$("generate").onclick=()=>{if(!requireAdmin())return;generate()};
+$("saveDraft").onclick=()=>{if(requireAdmin())saveDraft(true)};
+$("clearDraft").onclick=()=>{if(!requireAdmin())return;if(confirm("Clear the locally saved draft? This does not delete report history."))clearDraft()};
 registerClassFieldMetadata(CLASS_SCOPE_ID);
 ensureClassState(CLASS_SCOPE_ID);
 setupClassInputDelegation(CLASS_SCOPE_ID);
@@ -1823,7 +1778,7 @@ window.runSagtProductionDiagnostics=function(){
   return result;
 };
 
-bootSecurity().then(()=>{if(isAuthenticated()&&can('survey.report.history'))renderHistory()});
+bootSecurity().then(()=>{if(isAdminAuthenticated())renderHistory()});
 
 /* ---------- MS WORD-LIKE EDITING + FONT SHORTCUTS ----------
    Plain input/textarea fields use field-level font formatting; the selected
