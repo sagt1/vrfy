@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SAGT Survey Report Generator • Production Release</title>
+<title>SAGT Survey Report Generator • Authenticated Production Release</title>
 <style>
 :root{--ink:#111;--muted:#666;--line:#d8d8d8;--panel:#fff;--bg:#eef1f4;--accent:#123a63}
 *{box-sizing:border-box}
@@ -204,52 +204,109 @@ body.sagt-resizing,.sagt-resizing *{cursor:col-resize!important;user-select:none
   #a4{width:210mm!important;height:297mm!important;transform:none!important;box-shadow:none!important}
 }
 
-/* ---------- SERVER-AUTHORIZATION GATE ---------- */
-.auth-gate{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:rgba(10,24,38,.96);padding:20px}
-.auth-card{width:min(430px,100%);background:#fff;border-radius:16px;padding:26px;box-shadow:0 20px 70px #0008}
-.auth-badge{width:48px;height:48px;border-radius:12px;background:#123a63;color:#fff;display:grid;place-items:center;font-weight:900;margin-bottom:12px}
-.auth-card h1{margin:0 0 7px;font-size:22px}.auth-card p{margin:0 0 18px;color:#68737e;font-size:12px;line-height:1.5}
-.auth-label{display:block;font-size:11px;font-weight:800;color:#465461;margin:11px 0 5px}.auth-card input{width:100%;height:42px;font-size:16px;letter-spacing:.08em}
-.auth-help{font-size:10px;color:#68737e;margin-top:6px;line-height:1.4}.auth-message{min-height:18px;margin:10px 0;font-size:11px;color:#a22020}.auth-message.ok{color:#197337}
-.auth-submit{width:100%;margin-top:4px}.auth-submit[disabled]{opacity:.55;cursor:not-allowed}
-.auth-state{font-size:10px;color:#68737e;margin-top:12px;text-align:center}.auth-hidden{display:none!important}
-body.auth-locked>.app,body.auth-locked>header{visibility:hidden}
-body.auth-locked{overflow:hidden}
+/* ---------- SAGT AUTHORIZATION GATE ---------- */
+html.auth-locked,html.auth-locked body{overflow:hidden!important}
+body.auth-locked > header,
+body.auth-locked > .app{filter:blur(2px);pointer-events:none;user-select:none}
+#sagtAuthGate{
+  position:fixed;inset:0;z-index:999999;display:flex;align-items:center;justify-content:center;
+  padding:20px;background:linear-gradient(135deg,#0d2033,#173e61 55%,#0b1827);
+  color:#fff;font-family:Inter,Arial,sans-serif;
+}
+#sagtAuthGate.auth-hidden{display:none}
+.sagt-auth-card{
+  width:min(430px,100%);background:#fff;color:#17212b;border-radius:18px;padding:28px;
+  box-shadow:0 24px 80px #0008;border:1px solid #ffffff22;
+}
+.sagt-auth-brand{font-size:21px;font-weight:900;color:#123a63;letter-spacing:.3px}
+.sagt-auth-title{font-size:18px;font-weight:900;margin:22px 0 6px}
+.sagt-auth-sub{font-size:12px;color:#68737e;line-height:1.5;margin-bottom:18px}
+.sagt-auth-field{display:flex;flex-direction:column;gap:6px;margin:11px 0}
+.sagt-auth-field label{font-size:11px;color:#59636d;font-weight:800}
+.sagt-auth-field input{
+  width:100%;height:42px;border:1px solid #cbd2d9;border-radius:8px;padding:9px 11px;
+  background:#fff;color:#111;font-size:13px;outline:none;
+}
+.sagt-auth-field input:focus{border-color:#5f89ad;box-shadow:0 0 0 3px #123a6315}
+.sagt-auth-actions{display:flex;gap:8px;margin-top:16px}
+.sagt-auth-actions button{flex:1;height:42px}
+.sagt-auth-primary{background:#123a63;color:#fff}
+.sagt-auth-secondary{background:#e7edf3;color:#16324b}
+.sagt-auth-msg{display:none;margin-top:12px;padding:9px;border-radius:8px;font-size:11px;line-height:1.4}
+.sagt-auth-msg.show{display:block}
+.sagt-auth-msg.err{background:#fff0f0;color:#a22020}
+.sagt-auth-msg.ok{background:#eef6ef;color:#256c32}
+.sagt-auth-foot{font-size:9px;color:#89939c;margin-top:16px;line-height:1.45}
+#sagtLogout{
+  position:fixed;right:16px;top:14px;z-index:999998;display:none;
+  background:#ffffff18;color:#fff;border:1px solid #ffffff3a;padding:7px 10px;border-radius:7px;
+  font-size:10px;font-weight:800;backdrop-filter:blur(8px)
+}
+#sagtLogout.show{display:block}
+@media(max-width:520px){
+  .sagt-auth-card{padding:22px}
+}
+
 </style>
 </head>
 <body class="auth-locked">
-<div id="authGate" class="auth-gate" aria-modal="true" role="dialog">
-  <div class="auth-card">
-    <div class="auth-badge">SAGT</div>
-    <h1 id="authTitle">Authorisation Required</h1>
-    <p id="authIntro">Checking authorisation…</p>
-    <form id="authForm" autocomplete="off">
-      <div id="registerFields" class="auth-hidden">
-        <label class="auth-label" for="authUsername">Username</label>
-        <input id="authUsername" autocomplete="off" spellcheck="false" maxlength="32" inputmode="text">
-        <label class="auth-label" for="authPassword">Create 6-character password</label>
-        <input id="authPassword" type="text" value="123456" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="6" inputmode="text">
-        <div class="auth-help">Exactly 6 letters/numbers. Password is never stored in this browser.</div>
+
+<!-- SAGT AUTHORIZATION GATE: the application remains locked until authenticated. -->
+<div id="sagtAuthGate" role="dialog" aria-modal="true" aria-labelledby="sagtAuthTitle">
+  <div class="sagt-auth-card">
+    <div class="sagt-auth-brand">SAGT • SURVEY REPORT GENERATOR</div>
+    <div class="sagt-auth-title" id="sagtAuthTitle">Authorization Required</div>
+    <div class="sagt-auth-sub" id="sagtAuthSub">
+      Authorized credentials are required before the Survey Report Generator can be used.
+    </div>
+
+    <form id="sagtAuthForm" autocomplete="on">
+      <div class="sagt-auth-field">
+        <label for="sagtAuthUser">USERNAME</label>
+        <input id="sagtAuthUser" name="username" autocomplete="username" required maxlength="80">
       </div>
-      <div id="loginFields" class="auth-hidden">
-        <label class="auth-label" for="loginPassword">Password</label>
-        <input id="loginPassword" type="text" value="123456" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="6" inputmode="text">
-        <div class="auth-help" id="loginHelp">Enter all 6 characters. Correct entry authorises automatically.</div>
+      <div class="sagt-auth-field">
+        <label for="sagtAuthPass">PASSWORD</label>
+        <input id="sagtAuthPass" name="password" type="password" autocomplete="current-password" required maxlength="200">
       </div>
-      <div id="changeFields" class="auth-hidden">
-        <label class="auth-label" for="newPassword">New 6-character password</label>
-        <input id="newPassword" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="6" inputmode="text">
-        <div class="auth-help">Enter your new 6-character alphanumeric password. This becomes the only password used for future authorisation.</div>
+
+      <div class="sagt-auth-actions">
+        <button type="submit" class="sagt-auth-primary" id="sagtAuthSubmit">Authenticate</button>
       </div>
-      <div id="authMessage" class="auth-message" role="alert"></div>
-      <button id="authSubmit" class="primary auth-submit" type="submit">Continue</button>
-      <div class="auth-state">🔐 Credentials are not saved by this page.</div>
+      <div id="sagtAuthMsg" class="sagt-auth-msg" aria-live="polite"></div>
     </form>
+
+    <div id="sagtFirstRun" style="display:none">
+      <div class="sagt-auth-sub" style="margin-top:14px;margin-bottom:0">
+        First use: create the administrator credentials for this browser. The password is stored only as a salted SHA-256 hash.
+      </div>
+      <div class="sagt-auth-field">
+        <label for="sagtSetupUser">ADMIN USERNAME</label>
+        <input id="sagtSetupUser" autocomplete="username" maxlength="80">
+      </div>
+      <div class="sagt-auth-field">
+        <label for="sagtSetupPass">NEW PASSWORD</label>
+        <input id="sagtSetupPass" type="password" autocomplete="new-password" maxlength="200">
+      </div>
+      <div class="sagt-auth-field">
+        <label for="sagtSetupPass2">CONFIRM PASSWORD</label>
+        <input id="sagtSetupPass2" type="password" autocomplete="new-password" maxlength="200">
+      </div>
+      <div class="sagt-auth-actions">
+        <button type="button" class="sagt-auth-primary" id="sagtSetupBtn">Create Authorization</button>
+      </div>
+    </div>
+
+    <div class="sagt-auth-foot">
+      Browser-only authorization: suitable for controlling access to this local HTML application,
+      but not a substitute for server-side authentication when the file is publicly hosted.
+    </div>
   </div>
 </div>
+<button id="sagtLogout" type="button" title="Lock this application">Lock / Logout</button>
 
 
-<header><div class="brand">SAGT • SURVEY REPORT GENERATOR</div><div class="sub">A4 • flattened PDF • integrated QR • Admin History • ADMIN ONLY</div></header>
+<header><div class="brand">SAGT • SURVEY REPORT GENERATOR</div><div class="sub">A4 • flattened PDF • integrated QR • Authenticated • ADMIN ONLY</div></header>
 <div class="app" data-class-id="surveyReport">
 <aside class="panel">
 <div class="card"><h3>Report Details</h3><div class="grid form-grid">
@@ -401,6 +458,242 @@ body.auth-locked{overflow:hidden}
 </div></div></div></div></div></div>
 </main>
 </div>
+
+
+<script>
+/* ---------- SAGT AUTHORIZATION / SESSION CONTROL ---------- */
+(function SAGTAuthorization(){
+  "use strict";
+
+  const AUTH_KEY = "sagt_authorization_v1";
+  const SESSION_KEY = "sagt_authorized_session_v1";
+  const SESSION_MAX_MS = 30 * 60 * 1000; // 30-minute inactivity timeout
+
+  const gate = document.getElementById("sagtAuthGate");
+  const form = document.getElementById("sagtAuthForm");
+  const userInput = document.getElementById("sagtAuthUser");
+  const passInput = document.getElementById("sagtAuthPass");
+  const submitBtn = document.getElementById("sagtAuthSubmit");
+  const msg = document.getElementById("sagtAuthMsg");
+  const sub = document.getElementById("sagtAuthSub");
+  const logout = document.getElementById("sagtLogout");
+  const firstRun = document.getElementById("sagtFirstRun");
+  const setupUser = document.getElementById("sagtSetupUser");
+  const setupPass = document.getElementById("sagtSetupPass");
+  const setupPass2 = document.getElementById("sagtSetupPass2");
+  const setupBtn = document.getElementById("sagtSetupBtn");
+
+  const enc = new TextEncoder();
+
+  function setLocked(locked){
+    document.documentElement.classList.toggle("auth-locked", locked);
+    document.body.classList.toggle("auth-locked", locked);
+    gate.classList.toggle("auth-hidden", !locked);
+    logout.classList.toggle("show", !locked);
+    if(locked){
+      setTimeout(()=>userInput?.focus(),50);
+    }
+  }
+
+  function showMsg(text, type){
+    msg.textContent = text || "";
+    msg.className = "sagt-auth-msg" + (text ? " show " + (type || "err") : "");
+  }
+
+  function randomBytes(n){
+    const a = new Uint8Array(n);
+    crypto.getRandomValues(a);
+    return a;
+  }
+
+  function bytesToHex(bytes){
+    return [...bytes].map(x=>x.toString(16).padStart(2,"0")).join("");
+  }
+
+  async function sha256Hex(text){
+    const digest = await crypto.subtle.digest("SHA-256", enc.encode(text));
+    return bytesToHex(new Uint8Array(digest));
+  }
+
+  async function passwordHash(username, password, salt){
+    return sha256Hex("SAGT-AUTH-V1|" + salt + "|" + username + "|" + password);
+  }
+
+  function readAuth(){
+    try { return JSON.parse(localStorage.getItem(AUTH_KEY) || "null"); }
+    catch(_) { return null; }
+  }
+
+  function readSession(){
+    try { return JSON.parse(sessionStorage.getItem(SESSION_KEY) || "null"); }
+    catch(_) { return null; }
+  }
+
+  function writeSession(username){
+    try {
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+        username,
+        authenticatedAt: Date.now(),
+        lastActivity: Date.now()
+      }));
+    } catch(_) {}
+  }
+
+  function touchSession(){
+    const s = readSession();
+    if(!s) return;
+    s.lastActivity = Date.now();
+    try { sessionStorage.setItem(SESSION_KEY, JSON.stringify(s)); } catch(_) {}
+  }
+
+  function clearSession(){
+    try { sessionStorage.removeItem(SESSION_KEY); } catch(_) {}
+  }
+
+  function sessionValid(){
+    const s = readSession();
+    return !!(s && s.username && Number.isFinite(s.lastActivity) &&
+      Date.now() - s.lastActivity < SESSION_MAX_MS);
+  }
+
+  function showLogin(){
+    form.style.display = "block";
+    firstRun.style.display = "none";
+    sub.textContent = "Authorized credentials are required before the Survey Report Generator can be used.";
+    submitBtn.textContent = "Authenticate";
+    showMsg("");
+    setLocked(true);
+  }
+
+  function showFirstRun(){
+    form.style.display = "none";
+    firstRun.style.display = "block";
+    sub.textContent = "No administrator authorization is registered in this browser. Create it once, then use those credentials to authenticate.";
+    showMsg("");
+    setLocked(true);
+    setTimeout(()=>setupUser?.focus(),50);
+  }
+
+  async function authenticate(username, password){
+    const record = readAuth();
+    if(!record || !record.username || !record.salt || !record.hash) return false;
+    const hash = await passwordHash(username, password, record.salt);
+    return username === record.username && hash === record.hash;
+  }
+
+  form?.addEventListener("submit", async e=>{
+    e.preventDefault();
+    const username = userInput.value.trim();
+    const password = passInput.value;
+
+    if(!username || !password){
+      showMsg("Enter both username and password.", "err");
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Authenticating…";
+    try {
+      const ok = await authenticate(username, password);
+      if(!ok){
+        showMsg("Authorization failed. Check the username and password.", "err");
+        passInput.value = "";
+        passInput.focus();
+        return;
+      }
+      writeSession(username);
+      passInput.value = "";
+      showMsg("");
+      setLocked(false);
+      if(typeof window.setStatus === "function"){
+        try { window.setStatus("Authenticated as " + username + "."); } catch(_) {}
+      }
+    } catch(err){
+      showMsg("Authentication could not be completed in this browser.", "err");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Authenticate";
+    }
+  });
+
+  setupBtn?.addEventListener("click", async ()=>{
+    const username = setupUser.value.trim();
+    const password = setupPass.value;
+    const confirm = setupPass2.value;
+
+    if(username.length < 3){
+      showMsg("Username must contain at least 3 characters.", "err");
+      return;
+    }
+    if(password.length < 8){
+      showMsg("Password must contain at least 8 characters.", "err");
+      return;
+    }
+    if(password !== confirm){
+      showMsg("Password confirmation does not match.", "err");
+      return;
+    }
+    if(readAuth()){
+      showLogin();
+      return;
+    }
+
+    setupBtn.disabled = true;
+    setupBtn.textContent = "Creating…";
+    try {
+      const salt = bytesToHex(randomBytes(16));
+      const hash = await passwordHash(username, password, salt);
+      localStorage.setItem(AUTH_KEY, JSON.stringify({
+        version: 1,
+        username,
+        salt,
+        hash,
+        createdAt: new Date().toISOString()
+      }));
+      writeSession(username);
+      setLocked(false);
+      showMsg("");
+    } catch(err){
+      showMsg("Authorization setup failed. Please try again.", "err");
+    } finally {
+      setupBtn.disabled = false;
+      setupBtn.textContent = "Create Authorization";
+    }
+  });
+
+  logout?.addEventListener("click", ()=>{
+    clearSession();
+    userInput.value = "";
+    passInput.value = "";
+    showLogin();
+  });
+
+  // Activity refreshes the inactivity timer while the app is in use.
+  ["pointerdown","keydown","input","scroll","mousemove","touchstart"].forEach(evt=>{
+    document.addEventListener(evt, ()=>{
+      if(!document.body.classList.contains("auth-locked")) touchSession();
+    }, {passive:true});
+  });
+
+  setInterval(()=>{
+    if(!document.body.classList.contains("auth-locked") && !sessionValid()){
+      clearSession();
+      showLogin();
+      showMsg("Your authorization session expired. Please authenticate again.", "err");
+    }
+  }, 30000);
+
+  // Do not expose the application until an authenticated session exists.
+  if(sessionValid()){
+    setLocked(false);
+    touchSession();
+  }else if(readAuth()){
+    showLogin();
+  }else{
+    showFirstRun();
+  }
+})();
+</script>
 
 <script>
 /* ---------- PDF/QR DEPENDENCY LOADER ----------
@@ -1648,49 +1941,5 @@ renderHistory();
  },true);
  document.querySelectorAll('input,textarea,[contenteditable="true"]').forEach(el=>{el.spellcheck=true;el.dataset.wordShortcuts='Ctrl/Cmd+B I U • Ctrl/Cmd+Shift+>/< size • Ctrl/Cmd+Shift+F font • Ctrl/Cmd+Shift+P size • Ctrl/Cmd+Space clear';});
 })();
-
-/* ---------- SERVER-SIDE AUTHORIZATION ----------
-   IMPORTANT: this page deliberately does NOT store usernames/passwords.
-   A secure backend must expose the endpoints below and issue an HttpOnly,
-   Secure, SameSite cookie. The browser only receives authorization state. */
-const SAGT_AUTH_API="/api/auth";
-let sagtAuthMode="checking",sagtAuthorised=false;
-const authEl=id=>document.getElementById(id);
-const authMsg=(m,ok=false)=>{const e=authEl("authMessage");e.textContent=m||"";e.className="auth-message"+(ok?" ok":"")};
-const authShow=mode=>{
- sagtAuthMode=mode;
- ["registerFields","loginFields","changeFields"].forEach(id=>authEl(id).classList.add("auth-hidden"));
- if(mode==="register"){authEl("registerFields").classList.remove("auth-hidden");authEl("authTitle").textContent="First Authorisation";authEl("authIntro").textContent="Use the pre-set first-time password 123456. After successful authorisation, you must create your own new password.";authEl("authSubmit").textContent="Authorise";}
- if(mode==="login"){authEl("loginFields").classList.remove("auth-hidden");authEl("authTitle").textContent="Authorisation";authEl("authIntro").textContent="Enter the 6-character password. Authorisation happens automatically after character 6.";authEl("authSubmit").classList.add("auth-hidden");setTimeout(()=>authEl("loginPassword").focus(),50);}
- if(mode==="change"){authEl("changeFields").classList.remove("auth-hidden");authEl("authTitle").textContent="Password Expired";authEl("authIntro").textContent="Your 30-day password period has ended. Set a new password to continue.";authEl("authSubmit").textContent="Update Password";authEl("authSubmit").classList.remove("auth-hidden");setTimeout(()=>authEl("newPassword").focus(),50);}
-};
-async function authRequest(path,body){
- const r=await fetch(SAGT_AUTH_API+path,{method:body?"POST":"GET",credentials:"include",headers:body?{"Content-Type":"application/json"}:undefined,body:body?JSON.stringify(body):undefined});
- let data={};try{data=await r.json()}catch(_){}
- if(!r.ok)throw new Error(data.message||"Authorisation service unavailable.");return data;
-}
-async function checkAuthorisation(){
- try{const d=await authRequest("/status");if(d.authorised){sagtAuthorised=true;authEl("authGate").style.display="none";document.body.classList.remove("auth-locked");return;}
-   authEl("authGate").style.display="flex";authMsg("");authShow(d.registered? (d.expired?"change":"login") : "register");
- }catch(e){authEl("authGate").style.display="flex";authShow("login");authMsg("Authorisation server is required. "+e.message);}
-}
-function validSix(v){return /^[A-Za-z0-9]{6}$/.test(v)}
-async function submitLogin(){
- const password=authEl("loginPassword").value;
- if(!validSix(password)){authMsg("Password must contain exactly 6 letters/numbers.");return;}
- authMsg("Checking authorisation…");
- try{const d=await authRequest("/login",{password});if(!d.authorised)throw new Error(d.message||"Incorrect password.");sagtAuthorised=true;authEl("authGate").style.display="none";document.body.classList.remove("auth-locked");authMsg("");}catch(e){authMsg(e.message);authEl("loginPassword").select();}
-}
-authEl("loginPassword").addEventListener("input",()=>{const v=authEl("loginPassword").value.replace(/[^A-Za-z0-9]/g,"").slice(0,6);authEl("loginPassword").value=v;if(v.length===6)submitLogin()});
-authEl("authPassword").addEventListener("input",()=>{authEl("authPassword").value=authEl("authPassword").value.replace(/[^A-Za-z0-9]/g,"").slice(0,6)});
-authEl("newPassword").addEventListener("input",()=>{authEl("newPassword").value=authEl("newPassword").value.replace(/[^A-Za-z0-9]/g,"").slice(0,6)});
-authEl("authForm").addEventListener("submit",async e=>{
- e.preventDefault();
- try{
-  if(sagtAuthMode==="register"){const username=authEl("authUsername").value.trim();const password=authEl("authPassword").value;if(!username)throw new Error("Username is required.");if(password!=="123456")throw new Error("First-time password must be 123456.");authMsg("Authorising first-time access…");const d=await authRequest("/register",{username,password});if(!d.authorised)throw new Error(d.message||"First authorisation failed.");authShow("change");authMsg("First authorisation successful. Please update the password now.",true);authEl("newPassword").focus();return;}
-  if(sagtAuthMode==="change"){const password=authEl("newPassword").value;if(!validSix(password))throw new Error("Password must contain exactly 6 letters/numbers.");authMsg("Updating password…");const d=await authRequest("/change-password",{password});if(!d.authorised)throw new Error(d.message||"Password update failed.");sagtAuthorised=true;authEl("authGate").style.display="none";document.body.classList.remove("auth-locked");return;}
- }catch(e){authMsg(e.message)}
-});
-window.addEventListener("load",checkAuthorisation);
 </script>
 </body></html>
