@@ -442,9 +442,13 @@ body.sagt-resizing,.sagt-resizing *{cursor:col-resize!important;user-select:none
       if(ready[name]())return true;
       const ok=await new Promise(resolve=>{
         const script=document.createElement('script');
+        let settled=false;
+        let timer=null;
+        const finish=value=>{if(settled)return;settled=true;clearTimeout(timer);resolve(!!value)};
+        timer=setTimeout(()=>finish(false),7000);
         script.src=url;script.async=false;script.dataset.sagtDependency=name;
-        const done=()=>resolve(ready[name]());
-        script.onload=done;script.onerror=()=>resolve(false);
+        script.onload=()=>finish(ready[name]());
+        script.onerror=()=>finish(false);
         document.head.appendChild(script);
       });
       if(ok)return true;
@@ -452,12 +456,12 @@ body.sagt-resizing,.sagt-resizing *{cursor:col-resize!important;user-select:none
     return ready[name]();
   };
   window.loadSagtPdfLibraries=async()=>{
-    const result={};
-    for(const name of Object.keys(SOURCES))result[name]=await loadOne(name);
+    const names=Object.keys(SOURCES);
+    const values=await Promise.all(names.map(name=>loadOne(name)));
+    const result=Object.fromEntries(names.map((name,i)=>[name,values[i]]));
     window.sagtPdfLibraries=result;
     return result;
   };
-  window.sagtPdfLibrariesPromise=window.loadSagtPdfLibraries();
 })();
 </script>
 <script>
@@ -1389,7 +1393,7 @@ async function validate(options={silent:false}){
   const el=$("a4"),w=el?.clientWidth||0,h=el?.clientHeight||0;
   const a4ok=w>0&&h>0&&Math.abs(w-793.7008)<8&&Math.abs(h-1122.5197)<8;
   const required=missingClassFields.length===0&&missingCore.length===0&&datesValid;
-  const ok=required&&validCoords&&librariesReady&&cryptoReady&&a4ok;
+  const ok=required&&validCoords&&a4ok;
 
   setCheck("c1",required,"Required fields and valid dates");
   setCheck("c2",validCoords,"Coordinates");
@@ -1403,7 +1407,7 @@ async function validate(options={silent:false}){
     const missing=Object.entries(libs).filter(([,v])=>!v).map(([k])=>k);
     problems.push("PDF library: "+missing.join(", ")+" (internet access required for CDN libraries)");
   }
-  if(!cryptoReady)problems.push("SHA-256 browser support");
+  if(!cryptoReady)problems.push("SHA-256 unavailable for generation");
   if(!a4ok)problems.push("A4 page dimensions");
 
   if(ok){
@@ -1432,7 +1436,7 @@ function randomCode(){
 function drawQR(payload){
  if(typeof window.qrcode!=="function")throw new Error("QR generator library is unavailable.");
  if(!payload)throw new Error("QR payload is empty.");
- const qr=qrcode(0,"H");qr.addData(payload);qr.make();
+ const qr=qrcode(0,"M");qr.addData(payload);qr.make();
  const c=$("qr"),ctx=c?.getContext("2d");if(!c||!ctx)throw new Error("QR canvas is unavailable.");
  const n=qr.getModuleCount(),quiet=4,size=c.width,cell=Math.floor(size/(n+quiet*2));
  if(cell<4)throw new Error("QR payload is too large for the configured high-resolution canvas.");
@@ -1440,6 +1444,16 @@ function drawQR(payload){
  ctx.setTransform(1,0,0,1,0,0);ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,size,size);
  ctx.fillStyle="#fff";ctx.fillRect(0,0,size,size);ctx.fillStyle="#000";
  for(let r=0;r<n;r++)for(let col=0;col<n;col++)if(qr.isDark(r,col))ctx.fillRect(offset+(col+quiet)*cell,offset+(r+quiet)*cell,cell,cell);
+ // Keep the QR payload compact and integrate the existing SAGT logo without
+ // covering the finder patterns. The white backing preserves a clean scan area.
+ const logo=document.querySelector(".letterhead-logo");
+ if(logo&&logo.complete&&logo.naturalWidth){
+   const logoSize=Math.round(size*0.15),pad=Math.round(logoSize*0.16),box=logoSize+pad*2;
+   const lx=Math.round((size-box)/2),ly=Math.round((size-box)/2);
+   ctx.fillStyle="#fff";ctx.fillRect(lx,ly,box,box);
+   ctx.imageSmoothingEnabled=true;ctx.drawImage(logo,lx+pad,ly+pad,logoSize,logoSize);
+   ctx.imageSmoothingEnabled=false;
+ }
  c.dataset.modules=String(n);c.dataset.quietZone=String(quiet);c.dataset.payload=payload;return c;
 }
 async function sha256(buf){
@@ -1647,12 +1661,21 @@ async function generate(){
  if(generationBusy)return;if(!requireAdmin())return;if(!(await validate()))return;
  generationBusy=true;const btn=$("generate");if(btn)btn.disabled=true;
  try{
+  let libs={jsPDF:false,html2canvas:false,qrcode:false};
+  try{if(typeof window.loadSagtPdfLibraries==="function")libs=await window.loadSagtPdfLibraries();}catch(_){}
+  libs.jsPDF=!!(window.jspdf&&typeof window.jspdf.jsPDF==="function");
+  libs.html2canvas=typeof window.html2canvas==="function";
+  libs.qrcode=typeof window.qrcode==="function";
+  if(!libs.jsPDF||!libs.html2canvas||!libs.qrcode){
+    const missing=Object.entries(libs).filter(([,v])=>!v).map(([k])=>k).join(", ");
+    throw new Error("PDF generation libraries unavailable: "+missing+". Check internet access and click Validate again.");
+  }
   const d=getData(CLASS_SCOPE_ID),history=await getAllReports();let code="";do{code=randomCode()}while(history.some(x=>x.verificationCode===code));
   $("pVCode").textContent=code;$("verificationCodeDisplay").textContent=code;
   const sourcePayload=JSON.stringify({classId:CLASS_SCOPE_ID,documentNo:d.documentNo,reportNo:d.reportNo,surveyNo:d.surveyNo,reportDate:d.reportDate,surveyDate:d.surveyDate,surveyType:d.surveyType,applicant:d.applicant,nature:d.nature,electricity:d.electricity,extent:d.extent,village:d.village,mandal:d.mandal,org:d.org,city:d.city,assessmentNo:d.assessmentNo,digitalSign:d.digitalSign,observations:d.observations,declaration:d.declaration,boundaryEast:d.boundaryEast,boundaryWest:d.boundaryWest,boundaryNorth:d.boundaryNorth,boundarySouth:d.boundarySouth,coords:getCoords()});
   const sourceHash=await sha256(new TextEncoder().encode(sourcePayload));$("sourceHash").textContent=sourceHash;
-  const payload=canonicalPayload(code)+"\nSOURCE DATA SHA-256: "+sourceHash;setStatus("Generating verified A4 report…");
-  drawQR(payload);setCheck("c3",true,"Unique verification code");setCheck("c4",true,"QR generated with integrated report details");
+  const payload=`SAGT VERIFY|${code}|${d.reportNo}|${d.surveyNo}|${sourceHash}`;setStatus("Generating verified A4 report…");
+  drawQR(payload);setCheck("c3",true,"Unique verification code");setCheck("c4",true,"Compact QR generated with integrated SAGT logo");
   await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));fitReportLayout();fitA4ToViewport();
   const canvas=await renderA4ToCanvas();
   if(canvas.width<3000||canvas.height<4000)throw new Error(`A4 rasterization resolution is below the production threshold (${canvas.width}×${canvas.height}).`);
@@ -1675,7 +1698,7 @@ async function generate(){
   const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=finalName;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
   setStatus(`Generated successfully • ${code} • Final SHA-256: ${finalHash}`);
  }catch(e){
-  setCheck("c3",false,"Verification code");setCheck("c4",false,"QR generated with integrated report details");setCheck("c5",false,"A4 PDF validated");setCheck("c6",false,"Final SHA-256");setCheck("c7",false,"PDF blob bytes re-verified");setStatus(e?.message||"Report generation failed. No incomplete file was downloaded.",true);
+  setCheck("c3",false,"Verification code");setCheck("c4",false,"Compact QR generated with integrated SAGT logo");setCheck("c5",false,"A4 PDF validated");setCheck("c6",false,"Final SHA-256");setCheck("c7",false,"PDF blob bytes re-verified");setStatus(e?.message||"Report generation failed. No incomplete file was downloaded.",true);
  }finally{generationBusy=false;if(btn)btn.disabled=false}
 }
 
