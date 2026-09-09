@@ -102,8 +102,9 @@ button{border:0;border-radius:8px;padding:10px 12px;cursor:pointer;font-weight:8
 .sig-place{font-size:9px;margin-top:2px}
 .sig-role{font-size:9px;margin-top:7px}
 .digital-sign{font-size:8px;font-weight:800;margin-top:4px;letter-spacing:.25px}
-.verification{position:absolute;right:48px;bottom:28px;width:155px;text-align:center;background:#fff}
-.qr{width:112px;height:112px;display:block;margin:0 auto 4px;image-rendering:auto}
+.verification{position:absolute;right:48px;bottom:28px;width:155px;text-align:center;background:rgba(255,255,255,.97);padding:5px 5px 4px;border-radius:7px;box-shadow:0 0 0 1px #d9e0e6;overflow:hidden;isolation:isolate}
+.verification:before{content:"";position:absolute;z-index:-1;left:50%;top:49%;width:132px;height:132px;transform:translate(-50%,-50%);background-image:var(--sagt-logo-watermark);background-repeat:no-repeat;background-position:center;background-size:contain;opacity:.055;filter:grayscale(1)}
+.qr{width:118px;height:118px;display:block;margin:0 auto 4px;image-rendering:pixelated;image-rendering:crisp-edges}
 .verified{font-size:8px;font-weight:900;letter-spacing:.35px}.vcode{font-size:7px;font-weight:900;margin-top:3px;word-break:break-all}.vfirm,.vsign,.vstatus{font-size:6px;font-weight:700;margin-top:2px;line-height:1.18}
 .footer-note{position:absolute;right:48px;bottom:10px;font-size:6.5px;color:#555}
 
@@ -228,19 +229,19 @@ body.sagt-resizing,.sagt-resizing *{cursor:col-resize!important;user-select:none
     <form id="authForm" autocomplete="on">
       <div id="setupFields">
         <label class="auth-label" for="adminUser">Admin Username</label>
-        <input id="adminUser" autocomplete="username" maxlength="64" value="admin">
+        <input id="adminUser" autocomplete="username" maxlength="32" value="">
         <label class="auth-label" for="adminPass">Create Admin Passphrase</label>
-        <input id="adminPass" type="password" autocomplete="new-password" maxlength="64">
+        <input id="adminPass" type="password" autocomplete="new-password" minlength="10" maxlength="64">
         <label class="auth-label" for="adminPass2">Confirm Admin Passphrase</label>
-        <input id="adminPass2" type="password" autocomplete="new-password" maxlength="64">
-        <div class="auth-help">Use a long passphrase (15–64 characters). A passphrase is preferred over forced character combinations.</div>
+        <input id="adminPass2" type="password" autocomplete="new-password" minlength="10" maxlength="64">
+        <div class="auth-help">Use a passphrase (10–64 characters). Spaces and normal printable characters are allowed; longer passphrases are encouraged.</div>
       </div>
 
       <div id="loginFields" hidden>
         <label class="auth-label" for="loginUser">Admin Username</label>
-        <input id="loginUser" autocomplete="username" maxlength="64">
+        <input id="loginUser" autocomplete="username" maxlength="32">
         <label class="auth-label" for="loginPass">Admin Passphrase</label>
-        <input id="loginPass" type="password" autocomplete="current-password" maxlength="64">
+        <input id="loginPass" type="password" autocomplete="current-password" minlength="10" maxlength="64">
       </div>
 
       <div id="authMessage" class="auth-message" role="alert"></div>
@@ -316,7 +317,7 @@ body.sagt-resizing,.sagt-resizing *{cursor:col-resize!important;user-select:none
 <button class="primary" id="generate">GENERATE A4 SURVEY REPORT</button>
 </div><div id="status" class="status"></div><div id="draftStatus" class="draft-status" aria-live="polite">Draft: not saved</div></div>
 <div class="card"><h3>Final Validation</h3><div class="checks" id="checks">
-<span id="c1">○ Required fields</span><span id="c2">○ Coordinates</span><span id="c3">○ Verification code</span><span id="c4">○ QR generated with integrated report details</span><span id="c5">○ A4 PDF validated</span><span id="c6">○ Final SHA-256</span><span id="c7">○ PDF blob bytes re-verified</span>
+<span id="c1">○ Required fields</span><span id="c2">○ Coordinates</span><span id="c3">○ Verification code</span><span id="c4">○ QR generated with logo + scan-optimized error correction</span><span id="c5">○ A4 PDF validated</span><span id="c6">○ Final SHA-256</span><span id="c7">○ PDF blob bytes re-verified</span>
 </div></div>
 
 <div class="card integrity-card">
@@ -401,7 +402,7 @@ body.sagt-resizing,.sagt-resizing *{cursor:col-resize!important;user-select:none
 <div class="sig-role" id="pAssessmentNo"></div>
 <div class="digital-sign" id="pDigitalSign"></div>
 </div>
-<div class="verification"><canvas id="qr" class="qr" width="1000" height="1000"></canvas><div class="verified">DIGITALLY VERIFIED</div><div class="vcode" id="pVCode">—</div><div class="vfirm" id="pVFirm"></div><div class="vsign" id="pVSign"></div><div class="vstatus">AUTO GENERATED PDF • QR AUTHENTICATED</div></div>
+<div class="verification"><canvas id="qr" class="qr" width="1000" height="1000"></canvas><div class="verified">SCAN TO VERIFY • DIGITALLY VERIFIED</div><div class="vcode" id="pVCode">—</div><div class="vfirm" id="pVFirm"></div><div class="vsign" id="pVSign"></div><div class="vstatus">AUTO GENERATED PDF • QR AUTHENTICATED</div></div>
 <div class="footer-note">SHREE ADITYA GEO TECH &nbsp;•&nbsp; Digitally generated survey report</div>
 </div></div></div></div></div></div>
 </main>
@@ -505,7 +506,7 @@ function constantTimeEqual(a,b){
  let v=0;for(let i=0;i<a.length;i++)v|=a[i]^b[i];return v===0;
 }
 function passwordPolicy(p){
- if(typeof p!=="string" || p.length<15 || p.length>AUTH_MAX_PASSWORD) return "Use a passphrase between 15 and 64 characters.";
+ if(typeof p!=="string" || p.length<10 || p.length>AUTH_MAX_PASSWORD) return "Use a passphrase between 10 and 64 characters.";
  const weak=["passwordpassword","password123456","adminadminadmin","qwertyuiopasdfg","letmeinletmein12","123456789012345","changemechangeme","sagtadmin1234567"];
  if(weak.includes(p.toLowerCase())) return "Choose a less common passphrase.";
  return "";
@@ -585,8 +586,12 @@ document.getElementById("authForm").addEventListener("submit",async e=>{
    const user=document.getElementById("adminUser").value.trim();
    const p=document.getElementById("adminPass").value;
    const p2=document.getElementById("adminPass2").value;
-   if(!user){authMsg("Enter an Admin username.");return}
+   const usernamePolicy=/^[A-Za-z0-9][A-Za-z0-9._-]{2,31}$/;
+   const reservedUsers=["admin","administrator","root","system","support","security","superuser"];
+   if(!usernamePolicy.test(user)){authMsg("Username must be 3–32 characters and use only letters, numbers, dot, underscore, or hyphen.");return}
+   if(reservedUsers.includes(user.toLowerCase())){authMsg("Choose a non-default administrator username.");return}
    const policy=passwordPolicy(p);if(policy){authMsg(policy);return}
+   if(p.toLowerCase().includes(user.toLowerCase())){authMsg("Password should not contain the username.");return}
    if(p!==p2){authMsg("The two passphrases do not match.");return}
    const salt=crypto.getRandomValues(new Uint8Array(16));
    const hash=await derivePassword(p,salt);
@@ -598,6 +603,8 @@ document.getElementById("authForm").addEventListener("submit",async e=>{
 
  const user=document.getElementById("loginUser").value.trim();
  const p=document.getElementById("loginPass").value;
+ const usernamePolicy=/^[A-Za-z0-9][A-Za-z0-9._-]{2,31}$/;
+ if(!usernamePolicy.test(user)){authMsg("Invalid admin credentials.");return}
  if(Date.now()<Number(record.lockedUntil||0)){
    const wait=Math.ceil((Number(record.lockedUntil)-Date.now())/1000);
    authMsg(`Too many failed attempts. Try again in ${wait} seconds.`);return;
@@ -753,9 +760,10 @@ const SURVEY_DEFAULTS = {
  ]
 };
 const COMPANY_DEFAULTS={firmName:"SHREE ADITYA GEO TECH",address:"SRI NILAYAM APARTMENT, 1ST FLOOR, NEAR SUB-REGISTERED OFFICE, MITHILAPURI VUDA ROAD, MADHURAWADA, VISAKHAPATNAM, AP, INDIA - 530041",contact:"85008 90560 | 83092 92248",email:"shreeaditya2025@gmail.com",website:"shreeadityageotech.com",logoDataUrl:""};
-const APP_VERSION="15.1.0-class-isolated";
+const APP_VERSION="15.2.0-qr-scan-optimized";
 const DRAFT_STORAGE_KEY="sagt_survey_draft_v15_class_isolated";
 const $=id=>document.getElementById(id);
+requestAnimationFrame(()=>{const logo=document.querySelector(".letterhead-logo");if(logo?.src)document.documentElement.style.setProperty("--sagt-logo-watermark",`url("${logo.src}")`);});
 const fields=["reportNo","reportDate","surveyDate","org","city","digitalSign","observations","declaration","boundaryEast","boundaryWest","boundaryNorth","boundarySouth"];
 const TABLE_ADJUSTMENT_FIELDS=["geoWidth","boundaryWidth","geoRowHeight","boundaryRowHeight","geoCol1","boundaryCol1"];
 const CLASS_OWNED_FIELDS=[...fields,...TABLE_ADJUSTMENT_FIELDS];
@@ -1434,27 +1442,29 @@ function randomCode(){
  const a=new Uint8Array(8);crypto.getRandomValues(a);return "SAGT-VER-"+new Date().getFullYear()+"-"+[...a].map(x=>x.toString(16).padStart(2,"0")).join("").toUpperCase();
 }
 function drawQR(payload){
- if(typeof window.qrcode!=="function")throw new Error("QR generator library is unavailable.");
- if(!payload)throw new Error("QR payload is empty.");
- const qr=qrcode(0,"M");qr.addData(payload);qr.make();
- const c=$("qr"),ctx=c?.getContext("2d");if(!c||!ctx)throw new Error("QR canvas is unavailable.");
- const n=qr.getModuleCount(),quiet=4,size=c.width,cell=Math.floor(size/(n+quiet*2));
- if(cell<4)throw new Error("QR payload is too large for the configured high-resolution canvas.");
- const actual=(n+quiet*2)*cell,offset=Math.floor((size-actual)/2);
- ctx.setTransform(1,0,0,1,0,0);ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,size,size);
- ctx.fillStyle="#fff";ctx.fillRect(0,0,size,size);ctx.fillStyle="#000";
- for(let r=0;r<n;r++)for(let col=0;col<n;col++)if(qr.isDark(r,col))ctx.fillRect(offset+(col+quiet)*cell,offset+(r+quiet)*cell,cell,cell);
- // Keep the QR payload compact and integrate the existing SAGT logo without
- // covering the finder patterns. The white backing preserves a clean scan area.
- const logo=document.querySelector(".letterhead-logo");
- if(logo&&logo.complete&&logo.naturalWidth){
-   const logoSize=Math.round(size*0.15),pad=Math.round(logoSize*0.16),box=logoSize+pad*2;
-   const lx=Math.round((size-box)/2),ly=Math.round((size-box)/2);
-   ctx.fillStyle="#fff";ctx.fillRect(lx,ly,box,box);
-   ctx.imageSmoothingEnabled=true;ctx.drawImage(logo,lx+pad,ly+pad,logoSize,logoSize);
-   ctx.imageSmoothingEnabled=false;
- }
- c.dataset.modules=String(n);c.dataset.quietZone=String(quiet);c.dataset.payload=payload;return c;
+  if(typeof window.qrcode!=="function")throw new Error("QR generator library is unavailable.");
+  if(!payload)throw new Error("QR payload is empty.");
+  const c=$("qr"),ctx=c?.getContext("2d");if(!c||!ctx)throw new Error("QR canvas is unavailable.");
+  let qr=null,level="H";
+  for(const candidate of ["H","Q","M"]){
+    const test=qrcode(0,candidate);test.addData(payload);test.make();
+    const n=test.getModuleCount(),quiet=4,cell=Math.floor(c.width/(n+quiet*2));
+    if(cell>=4){qr=test;level=candidate;break;}
+  }
+  if(!qr)throw new Error("QR payload is too large for the configured high-resolution canvas.");
+  const n=qr.getModuleCount(),quiet=4,size=c.width,cell=Math.floor(size/(n+quiet*2));
+  const actual=(n+quiet*2)*cell,offset=Math.floor((size-actual)/2);
+  ctx.setTransform(1,0,0,1,0,0);ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,size,size);
+  ctx.fillStyle="#fff";ctx.fillRect(0,0,size,size);ctx.fillStyle="#000";
+  for(let r=0;r<n;r++)for(let col=0;col<n;col++)if(qr.isDark(r,col))ctx.fillRect(offset+(col+quiet)*cell,offset+(r+quiet)*cell,cell,cell);
+  const logo=document.querySelector(".letterhead-logo");
+  if(logo&&logo.complete&&logo.naturalWidth){
+    const logoSize=Math.round(size*0.12),pad=Math.max(10,Math.round(logoSize*0.18)),box=logoSize+pad*2;
+    const lx=Math.round((size-box)/2),ly=Math.round((size-box)/2);
+    ctx.fillStyle="#fff";ctx.fillRect(lx,ly,box,box);
+    ctx.imageSmoothingEnabled=true;ctx.drawImage(logo,lx+pad,ly+pad,logoSize,logoSize);ctx.imageSmoothingEnabled=false;
+  }
+  c.dataset.modules=String(n);c.dataset.quietZone=String(quiet);c.dataset.errorCorrection=level;c.dataset.payload=payload;return c;
 }
 async function sha256(buf){
   if(!window.crypto?.subtle)throw new Error("SHA-256 is unavailable in this browser context.");
@@ -1675,7 +1685,7 @@ async function generate(){
   const sourcePayload=JSON.stringify({classId:CLASS_SCOPE_ID,documentNo:d.documentNo,reportNo:d.reportNo,surveyNo:d.surveyNo,reportDate:d.reportDate,surveyDate:d.surveyDate,surveyType:d.surveyType,applicant:d.applicant,nature:d.nature,electricity:d.electricity,extent:d.extent,village:d.village,mandal:d.mandal,org:d.org,city:d.city,assessmentNo:d.assessmentNo,digitalSign:d.digitalSign,observations:d.observations,declaration:d.declaration,boundaryEast:d.boundaryEast,boundaryWest:d.boundaryWest,boundaryNorth:d.boundaryNorth,boundarySouth:d.boundarySouth,coords:getCoords()});
   const sourceHash=await sha256(new TextEncoder().encode(sourcePayload));$("sourceHash").textContent=sourceHash;
   const payload=`SAGT VERIFY|${code}|${d.reportNo}|${d.surveyNo}|${sourceHash}`;setStatus("Generating verified A4 report…");
-  drawQR(payload);setCheck("c3",true,"Unique verification code");setCheck("c4",true,"Compact QR generated with integrated SAGT logo");
+  drawQR(payload);setCheck("c3",true,"Unique verification code");setCheck("c4",true,"Scan-optimized QR generated with integrated SAGT logo");
   await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));fitReportLayout();fitA4ToViewport();
   const canvas=await renderA4ToCanvas();
   if(canvas.width<3000||canvas.height<4000)throw new Error(`A4 rasterization resolution is below the production threshold (${canvas.width}×${canvas.height}).`);
